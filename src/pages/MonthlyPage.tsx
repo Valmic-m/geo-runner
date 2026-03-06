@@ -1,6 +1,4 @@
 import { useState } from 'react'
-import { Play } from 'lucide-react'
-import { TextInput } from '@/components/shared/TextInput'
 import { SignalBar } from '@/components/shared/SignalBar'
 import { ScoreGauge } from '@/components/shared/ScoreGauge'
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection'
@@ -8,24 +6,26 @@ import { ArtifactCard } from '@/components/shared/ArtifactCard'
 import { CopyButton } from '@/components/shared/CopyButton'
 import { ExportButton } from '@/components/shared/ExportButton'
 import { PlatformBadge } from '@/components/shared/PlatformBadge'
+import { SnapshotForm } from '@/components/forms/SnapshotForm'
+import { ChangelogForm } from '@/components/forms/ChangelogForm'
 import { useWorkflow } from '@/hooks/useWorkflow'
 import { runMonthlyWorkflow } from '@/engine/workflows/monthly-workflow'
 import type { MonthlyInput, MonthlyOutput } from '@/engine/workflows/monthly-workflow'
-import { SNAPSHOT_TEMPLATE } from '@/engine/parsers/snapshot-parser'
-import { CHANGELOG_TEMPLATE } from '@/engine/parsers/changelog-parser'
+import { useExtractedData } from '@/context/ExtractedDataContext'
+import type { ClientGeoSnapshot } from '@/types/snapshot'
+import type { MonthlyChangeLog } from '@/types/changelog'
 import { cn } from '@/lib/cn'
 
 export function MonthlyPage() {
-  const [snapshotText, setSnapshotText] = useState('')
-  const [changelogText, setChangelogText] = useState('')
+  const { extractedData, clearExtractedData } = useExtractedData()
+  const [changelog, setChangelog] = useState<MonthlyChangeLog | null>(null)
 
   const { result, error, isRunning, run } = useWorkflow<MonthlyInput, MonthlyOutput>(runMonthlyWorkflow)
 
-  const handleRun = () => {
-    run({ snapshotText, changelogText })
+  const handleRun = (snapshot: ClientGeoSnapshot) => {
+    clearExtractedData()
+    run({ snapshot, changelog: changelog ?? undefined })
   }
-
-  const canRun = snapshotText.trim().length > 0
 
   const exportContent = result
     ? [
@@ -55,51 +55,30 @@ export function MonthlyPage() {
       <div>
         <h2 className="text-xl font-bold text-text">Monthly GEO Cycle</h2>
         <p className="text-sm text-text-muted mt-1">Run a full monthly diagnostic with signal analysis, recommendations, and artifact generation.</p>
-        <p className="text-xs text-text-muted mt-1">This is the core GEO workflow. It scores all 12 signals, flags critical gaps, generates ready-to-publish content artifacts, and produces a deployment plan. Run monthly for each client.</p>
+        <p className="text-xs text-text-muted mt-1">This is the core GEO workflow. It scores all 12 signals, flags critical gaps, generates ready-to-publish content artifacts, and produces a deployment plan.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Input Panel */}
-        <div className="space-y-4">
-          <TextInput
-            label="Client GEO Snapshot"
-            value={snapshotText}
-            onChange={setSnapshotText}
-            template={SNAPSHOT_TEMPLATE}
-            required
-            placeholder="Paste the Client GEO Snapshot here..."
-          />
-          <TextInput
-            label="Monthly Change Log"
-            value={changelogText}
-            onChange={setChangelogText}
-            template={CHANGELOG_TEMPLATE}
-            rows={8}
-            placeholder="Paste the Monthly Change Log here (optional)..."
-          />
-          <button
-            onClick={handleRun}
-            disabled={!canRun || isRunning}
-            className={cn(
-              'w-full flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors',
-              canRun
-                ? 'bg-primary text-white hover:bg-primary-dark'
-                : 'bg-border text-text-muted cursor-not-allowed',
-            )}
-          >
-            <Play size={16} />
-            {isRunning ? 'Running...' : 'Run Monthly Analysis'}
-          </button>
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-sm font-semibold text-text mb-3">Client GEO Snapshot</h3>
+            <SnapshotForm onSubmit={handleRun} isRunning={isRunning} initialData={extractedData ?? undefined} />
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-text mb-3">Monthly Change Log <span className="text-text-muted font-normal">(optional)</span></h3>
+            <ChangelogForm onChange={setChangelog} />
+          </div>
+
           {error && (
             <div className="text-sm text-danger bg-danger/10 rounded-lg p-3">{error}</div>
           )}
         </div>
 
-        {/* Output Panel */}
         <div className="space-y-4">
           {!result && !error && (
             <div className="text-center py-20 text-text-muted text-sm border border-dashed border-border rounded-lg">
-              Paste a Client GEO Snapshot and run the analysis to see results.
+              Fill out the snapshot form and run the analysis to see results.
             </div>
           )}
 

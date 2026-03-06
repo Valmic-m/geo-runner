@@ -17,7 +17,7 @@ const steps = [
     icon: ClipboardList,
     title: 'Create a Client Snapshot',
     description:
-      'Fill out the Client GEO Snapshot template with business info and signal scores (1-5 each). New client? Start with Website Extract to identify categories and gaps first.',
+      'New client? Start with Website Extract to scan their website — it auto-fills categories and audience into your snapshot. Then complete the remaining fields using the guided form.',
     link: { to: '/website-extract', label: 'Website Extract' },
   },
   {
@@ -31,7 +31,7 @@ const steps = [
     icon: Calendar,
     title: 'Run a Monthly Cycle',
     description:
-      'Paste the snapshot into the Monthly workflow. Get signal diagnostics, content artifacts (FAQs, schema, entity blocks), and a deployment plan telling you where to publish each piece.',
+      'Run the Monthly workflow with your snapshot. Get signal diagnostics, content artifacts (FAQs, schema, entity blocks), and a deployment plan telling you where to publish each piece.',
     link: { to: '/monthly', label: 'Monthly Cycle' },
   },
   {
@@ -51,9 +51,9 @@ const workflows = [
     badge: 'Start here (new clients)',
     when: 'First time with a new client',
     description:
-      'Analyze website content to extract categories, audience, differentiators, and missing trust signals.',
-    inputs: 'Pasted website content',
-    outputs: 'Categories, audience, differentiators, missing signals, recommendations',
+      'Scan a website URL to extract categories, audience, differentiators, and missing trust signals. Results auto-fill the snapshot form on the next step.',
+    inputs: 'Website URL',
+    outputs: 'Categories, audience, differentiators, missing signals, recommendations + pre-filled snapshot',
   },
   {
     to: '/generate-tests',

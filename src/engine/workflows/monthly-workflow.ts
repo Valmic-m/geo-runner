@@ -15,8 +15,10 @@ import { ensureExternalDistribution } from '@/engine/modules/signal-distribution
 import { formatSnapshot } from '@/engine/generators/snapshot-updater'
 
 export interface MonthlyInput {
-  snapshotText: string
-  changelogText: string
+  snapshotText?: string
+  snapshot?: ClientGeoSnapshot
+  changelogText?: string
+  changelog?: MonthlyChangeLog
   testResultsText?: string
   websiteExcerpts?: string
 }
@@ -36,14 +38,21 @@ export interface MonthlyOutput {
 
 export function runMonthlyWorkflow(input: MonthlyInput): MonthlyOutput {
   // Parse inputs
-  const snapshotResult = parseSnapshot(input.snapshotText)
-  if (!snapshotResult.data) {
-    throw new Error(`Failed to parse snapshot: ${snapshotResult.errors.join(', ')}`)
+  let snapshot: ClientGeoSnapshot
+  if (input.snapshot) {
+    snapshot = input.snapshot
+  } else if (input.snapshotText) {
+    const snapshotResult = parseSnapshot(input.snapshotText)
+    if (!snapshotResult.data) {
+      throw new Error(`Failed to parse snapshot: ${snapshotResult.errors.join(', ')}`)
+    }
+    snapshot = snapshotResult.data
+  } else {
+    throw new Error('Either snapshot or snapshotText is required')
   }
-  const snapshot = snapshotResult.data
 
-  let changelog: MonthlyChangeLog | undefined
-  if (input.changelogText.trim()) {
+  let changelog: MonthlyChangeLog | undefined = input.changelog
+  if (!changelog && input.changelogText?.trim()) {
     const changelogResult = parseChangelog(input.changelogText)
     changelog = changelogResult.data
   }

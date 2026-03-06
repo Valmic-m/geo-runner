@@ -4,7 +4,8 @@ import { parseSnapshot } from '@/engine/parsers/snapshot-parser'
 import { generateTestPrompts, generateInteractivePrompt } from '@/engine/generators/test-prompt-generator'
 
 export interface GenerateTestsInput {
-  snapshotText: string
+  snapshotText?: string
+  snapshot?: ClientGeoSnapshot
 }
 
 export interface GenerateTestsOutput {
@@ -14,11 +15,18 @@ export interface GenerateTestsOutput {
 }
 
 export function runGenerateTestsWorkflow(input: GenerateTestsInput): GenerateTestsOutput {
-  const snapshotResult = parseSnapshot(input.snapshotText)
-  if (!snapshotResult.data) {
-    throw new Error(`Failed to parse snapshot: ${snapshotResult.errors.join(', ')}`)
+  let snapshot: ClientGeoSnapshot
+  if (input.snapshot) {
+    snapshot = input.snapshot
+  } else if (input.snapshotText) {
+    const snapshotResult = parseSnapshot(input.snapshotText)
+    if (!snapshotResult.data) {
+      throw new Error(`Failed to parse snapshot: ${snapshotResult.errors.join(', ')}`)
+    }
+    snapshot = snapshotResult.data
+  } else {
+    throw new Error('Either snapshot or snapshotText is required')
   }
-  const snapshot = snapshotResult.data
 
   return {
     snapshot,

@@ -1,23 +1,29 @@
 import { useState } from 'react'
-import { Play } from 'lucide-react'
-import { TextInput } from '@/components/shared/TextInput'
 import { SignalBar } from '@/components/shared/SignalBar'
 import { ScoreGauge } from '@/components/shared/ScoreGauge'
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection'
 import { CopyButton } from '@/components/shared/CopyButton'
 import { ExportButton } from '@/components/shared/ExportButton'
+import { SnapshotForm } from '@/components/forms/SnapshotForm'
+import { AuthorityForm } from '@/components/forms/AuthorityForm'
 import { useWorkflow } from '@/hooks/useWorkflow'
 import { runQuarterlyWorkflow } from '@/engine/workflows/quarterly-workflow'
 import type { QuarterlyInput, QuarterlyOutput } from '@/engine/workflows/quarterly-workflow'
-import { SNAPSHOT_TEMPLATE } from '@/engine/parsers/snapshot-parser'
-import { AUTHORITY_TEMPLATE } from '@/engine/parsers/authority-parser'
+import { useExtractedData } from '@/context/ExtractedDataContext'
+import type { ClientGeoSnapshot } from '@/types/snapshot'
+import type { AuthoritySnapshot } from '@/types/authority'
 import { cn } from '@/lib/cn'
 
 export function QuarterlyPage() {
-  const [snapshotText, setSnapshotText] = useState('')
-  const [authorityText, setAuthorityText] = useState('')
+  const { extractedData, clearExtractedData } = useExtractedData()
+  const [authority, setAuthority] = useState<AuthoritySnapshot | null>(null)
 
-  const { result, error, run } = useWorkflow<QuarterlyInput, QuarterlyOutput>(runQuarterlyWorkflow)
+  const { result, error, isRunning, run } = useWorkflow<QuarterlyInput, QuarterlyOutput>(runQuarterlyWorkflow)
+
+  const handleRun = (snapshot: ClientGeoSnapshot) => {
+    clearExtractedData()
+    run({ snapshot, authority: authority ?? undefined })
+  }
 
   const exportContent = result
     ? [
@@ -56,26 +62,24 @@ export function QuarterlyPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <TextInput label="Client GEO Snapshot" value={snapshotText} onChange={setSnapshotText} template={SNAPSHOT_TEMPLATE} required />
-          <TextInput label="Authority Snapshot" value={authorityText} onChange={setAuthorityText} template={AUTHORITY_TEMPLATE} rows={8} />
-          <button
-            onClick={() => run({ snapshotText, authorityText })}
-            disabled={!snapshotText.trim()}
-            className={cn(
-              'w-full flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors',
-              snapshotText.trim() ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-border text-text-muted cursor-not-allowed',
-            )}
-          >
-            <Play size={16} /> Run Quarterly Review
-          </button>
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-sm font-semibold text-text mb-3">Client GEO Snapshot</h3>
+            <SnapshotForm onSubmit={handleRun} isRunning={isRunning} initialData={extractedData ?? undefined} />
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-text mb-3">Authority Snapshot <span className="text-text-muted font-normal">(optional)</span></h3>
+            <AuthorityForm onChange={setAuthority} />
+          </div>
+
           {error && <div className="text-sm text-danger bg-danger/10 rounded-lg p-3">{error}</div>}
         </div>
 
         <div className="space-y-4">
           {!result && (
             <div className="text-center py-20 text-text-muted text-sm border border-dashed border-border rounded-lg">
-              Paste snapshot and authority data, then run the review.
+              Fill out the snapshot form and run the quarterly review to see results.
             </div>
           )}
 
