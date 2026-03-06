@@ -1,21 +1,22 @@
-import { useState } from 'react'
-import { Play } from 'lucide-react'
-import { TextInput } from '@/components/shared/TextInput'
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection'
 import { CopyButton } from '@/components/shared/CopyButton'
 import { ExportButton } from '@/components/shared/ExportButton'
 import { PlatformBadge } from '@/components/shared/PlatformBadge'
+import { SnapshotForm } from '@/components/forms/SnapshotForm'
 import { useWorkflow } from '@/hooks/useWorkflow'
 import { runGenerateTestsWorkflow } from '@/engine/workflows/generate-tests-workflow'
 import type { GenerateTestsInput, GenerateTestsOutput } from '@/engine/workflows/generate-tests-workflow'
-import { SNAPSHOT_TEMPLATE } from '@/engine/parsers/snapshot-parser'
-import type { PlatformKey } from '@/types/snapshot'
-import { cn } from '@/lib/cn'
+import { useExtractedData } from '@/context/ExtractedDataContext'
+import type { ClientGeoSnapshot, PlatformKey } from '@/types/snapshot'
 
 export function GenerateTestsPage() {
-  const [snapshotText, setSnapshotText] = useState('')
+  const { extractedData, clearExtractedData } = useExtractedData()
+  const { result, error, isRunning, run } = useWorkflow<GenerateTestsInput, GenerateTestsOutput>(runGenerateTestsWorkflow)
 
-  const { result, error, run } = useWorkflow<GenerateTestsInput, GenerateTestsOutput>(runGenerateTestsWorkflow)
+  const handleRun = (snapshot: ClientGeoSnapshot) => {
+    clearExtractedData()
+    run({ snapshot })
+  }
 
   const platforms: PlatformKey[] = ['chatgpt', 'claude', 'gemini']
 
@@ -46,24 +47,15 @@ export function GenerateTestsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <TextInput label="Client GEO Snapshot" value={snapshotText} onChange={setSnapshotText} template={SNAPSHOT_TEMPLATE} required />
-          <button
-            onClick={() => run({ snapshotText })}
-            disabled={!snapshotText.trim()}
-            className={cn(
-              'w-full flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors',
-              snapshotText.trim() ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-border text-text-muted cursor-not-allowed',
-            )}
-          >
-            <Play size={16} /> Generate Test Prompts
-          </button>
+          <h3 className="text-sm font-semibold text-text">Client GEO Snapshot</h3>
+          <SnapshotForm onSubmit={handleRun} isRunning={isRunning} initialData={extractedData ?? undefined} />
           {error && <div className="text-sm text-danger bg-danger/10 rounded-lg p-3">{error}</div>}
         </div>
 
         <div className="space-y-4">
           {!result && (
             <div className="text-center py-20 text-text-muted text-sm border border-dashed border-border rounded-lg">
-              Paste a snapshot and generate test prompts for AI platforms.
+              Fill out the snapshot form and generate test prompts for AI platforms.
             </div>
           )}
 

@@ -1,18 +1,6 @@
 import type { MonthlyChangeLog } from '@/types/changelog'
 import type { ParseResult } from '@/types/common'
 
-export const CHANGELOG_TEMPLATE = `MONTHLY CHANGE LOG
-
-New services/products:
-New locations:
-Messaging changes:
-Pricing changes:
-Compliance updates:
-Campaigns launched:
-Priority revenue focus:
-
-END LOG`
-
 function extractField(text: string, ...labels: string[]): string {
   for (const label of labels) {
     const regex = new RegExp(`${label}\\s*[:\\-=]\\s*(.+)`, 'i')

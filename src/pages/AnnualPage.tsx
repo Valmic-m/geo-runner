@@ -1,22 +1,33 @@
 import { useState } from 'react'
-import { Play } from 'lucide-react'
-import { TextInput } from '@/components/shared/TextInput'
 import { SignalBar } from '@/components/shared/SignalBar'
 import { ScoreGauge } from '@/components/shared/ScoreGauge'
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection'
 import { CopyButton } from '@/components/shared/CopyButton'
 import { ExportButton } from '@/components/shared/ExportButton'
+import { SnapshotForm } from '@/components/forms/SnapshotForm'
 import { useWorkflow } from '@/hooks/useWorkflow'
 import { runAnnualWorkflow } from '@/engine/workflows/annual-workflow'
 import type { AnnualInput, AnnualOutput } from '@/engine/workflows/annual-workflow'
-import { SNAPSHOT_TEMPLATE } from '@/engine/parsers/snapshot-parser'
+import { useExtractedData } from '@/context/ExtractedDataContext'
+import type { ClientGeoSnapshot } from '@/types/snapshot'
 import { cn } from '@/lib/cn'
 
 export function AnnualPage() {
-  const [snapshotText, setSnapshotText] = useState('')
+  const { extractedData, clearExtractedData } = useExtractedData()
   const [websiteExcerpts, setWebsiteExcerpts] = useState('')
 
-  const { result, error, run } = useWorkflow<AnnualInput, AnnualOutput>(runAnnualWorkflow)
+  const { result, error, isRunning, run } = useWorkflow<AnnualInput, AnnualOutput>(runAnnualWorkflow)
+
+  const handleRun = (snapshot: ClientGeoSnapshot) => {
+    clearExtractedData()
+    run({ snapshot, websiteExcerpts: websiteExcerpts || undefined })
+  }
+
+  const inputClass = cn(
+    'w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm font-mono',
+    'focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary',
+    'placeholder:text-text-muted/50 resize-y',
+  )
 
   const exportContent = result
     ? [
@@ -50,26 +61,32 @@ export function AnnualPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <TextInput label="Client GEO Snapshot" value={snapshotText} onChange={setSnapshotText} template={SNAPSHOT_TEMPLATE} required />
-          <TextInput label="Website Excerpts (optional)" value={websiteExcerpts} onChange={setWebsiteExcerpts} rows={6} placeholder="Paste key website content here..." />
-          <button
-            onClick={() => run({ snapshotText, websiteExcerpts })}
-            disabled={!snapshotText.trim()}
-            className={cn(
-              'w-full flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors',
-              snapshotText.trim() ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-border text-text-muted cursor-not-allowed',
-            )}
-          >
-            <Play size={16} /> Run Annual Reset
-          </button>
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-sm font-semibold text-text mb-3">Client GEO Snapshot</h3>
+            <SnapshotForm onSubmit={handleRun} isRunning={isRunning} initialData={extractedData ?? undefined} />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-text">
+              Website Excerpts <span className="text-text-muted font-normal">(optional)</span>
+            </label>
+            <textarea
+              value={websiteExcerpts}
+              onChange={(e) => setWebsiteExcerpts(e.target.value)}
+              rows={6}
+              placeholder="Paste key website content here for category precision analysis..."
+              className={inputClass}
+            />
+          </div>
+
           {error && <div className="text-sm text-danger bg-danger/10 rounded-lg p-3">{error}</div>}
         </div>
 
         <div className="space-y-4">
           {!result && (
             <div className="text-center py-20 text-text-muted text-sm border border-dashed border-border rounded-lg">
-              Paste snapshot and run the annual reset to see results.
+              Fill out the snapshot form and run the annual reset to see results.
             </div>
           )}
 

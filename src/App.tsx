@@ -1,5 +1,6 @@
 import { HashRouter, Routes, Route } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
+import { ExtractedDataProvider } from '@/context/ExtractedDataContext'
 import { HomePage } from '@/pages/HomePage'
 import { MonthlyPage } from '@/pages/MonthlyPage'
 import { QuarterlyPage } from '@/pages/QuarterlyPage'
@@ -10,6 +11,7 @@ import { WebsiteExtractPage } from '@/pages/WebsiteExtractPage'
 function App() {
   return (
     <HashRouter>
+      <ExtractedDataProvider>
       <AppShell>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -20,6 +22,7 @@ function App() {
           <Route path="/website-extract" element={<WebsiteExtractPage />} />
         </Routes>
       </AppShell>
+      </ExtractedDataProvider>
     </HashRouter>
   )
 }

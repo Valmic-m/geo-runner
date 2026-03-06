@@ -12,8 +12,10 @@ import { mapEntityRelationships } from '@/engine/modules/entity-relationship-map
 import { formatSnapshot } from '@/engine/generators/snapshot-updater'
 
 export interface QuarterlyInput {
-  snapshotText: string
-  authorityText: string
+  snapshotText?: string
+  snapshot?: ClientGeoSnapshot
+  authorityText?: string
+  authority?: AuthoritySnapshot
 }
 
 export interface QuarterlyOutput {
@@ -29,22 +31,45 @@ export interface QuarterlyOutput {
 }
 
 export function runQuarterlyWorkflow(input: QuarterlyInput): QuarterlyOutput {
-  const snapshotResult = parseSnapshot(input.snapshotText)
-  if (!snapshotResult.data) {
-    throw new Error(`Failed to parse snapshot: ${snapshotResult.errors.join(', ')}`)
+  let snapshot: ClientGeoSnapshot
+  if (input.snapshot) {
+    snapshot = input.snapshot
+  } else if (input.snapshotText) {
+    const snapshotResult = parseSnapshot(input.snapshotText)
+    if (!snapshotResult.data) {
+      throw new Error(`Failed to parse snapshot: ${snapshotResult.errors.join(', ')}`)
+    }
+    snapshot = snapshotResult.data
+  } else {
+    throw new Error('Either snapshot or snapshotText is required')
   }
-  const snapshot = snapshotResult.data
 
-  const authorityResult = parseAuthoritySnapshot(input.authorityText)
-  const authority: AuthoritySnapshot = authorityResult.data ?? {
-    currentAuthoritySources: [],
-    industryDirectories: [],
-    mediaPresence: [],
-    partnerMentions: [],
-    certifications: [],
-    awards: [],
-    speakingEngagements: [],
-    publications: [],
+  let authority: AuthoritySnapshot
+  if (input.authority) {
+    authority = input.authority
+  } else if (input.authorityText) {
+    const authorityResult = parseAuthoritySnapshot(input.authorityText)
+    authority = authorityResult.data ?? {
+      currentAuthoritySources: [],
+      industryDirectories: [],
+      mediaPresence: [],
+      partnerMentions: [],
+      certifications: [],
+      awards: [],
+      speakingEngagements: [],
+      publications: [],
+    }
+  } else {
+    authority = {
+      currentAuthoritySources: [],
+      industryDirectories: [],
+      mediaPresence: [],
+      partnerMentions: [],
+      certifications: [],
+      awards: [],
+      speakingEngagements: [],
+      publications: [],
+    }
   }
 
   const diagnostics = analyzeSignals(snapshot.signals)

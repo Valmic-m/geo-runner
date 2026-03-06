@@ -7,7 +7,7 @@ interface WorkflowState<T> {
 }
 
 export function useWorkflow<TInput, TOutput>(
-  workflowFn: (input: TInput) => TOutput,
+  workflowFn: (input: TInput) => TOutput | Promise<TOutput>,
 ) {
   const [state, setState] = useState<WorkflowState<TOutput>>({
     result: null,
@@ -16,10 +16,10 @@ export function useWorkflow<TInput, TOutput>(
   })
 
   const run = useCallback(
-    (input: TInput) => {
+    async (input: TInput) => {
       setState({ result: null, error: null, isRunning: true })
       try {
-        const result = workflowFn(input)
+        const result = await Promise.resolve(workflowFn(input))
         setState({ result, error: null, isRunning: false })
       } catch (err) {
         setState({

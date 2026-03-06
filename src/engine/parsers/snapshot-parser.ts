@@ -1,47 +1,6 @@
 import type { ClientGeoSnapshot, SignalScores, PlatformVisibility } from '@/types/snapshot'
 import type { ParseResult } from '@/types/common'
 
-export const SNAPSHOT_TEMPLATE = `CLIENT GEO SNAPSHOT
-
-Business name:
-Primary category label:
-Secondary category:
-Audience:
-Geo scope:
-Revenue model:
-Regulated:
-
-Competitors:
-
-Scores (1-5)
-
-Entity clarity:
-Brand mentions:
-Comparison presence:
-FAQ coverage:
-Structured data:
-Reviews:
-Authority signals:
-Citations:
-GBP completeness:
-Knowledge graph signals:
-Messaging consistency:
-Credibility signals:
-
-AI Visibility
-
-ChatGPT inclusion %:
-Gemini inclusion %:
-Claude inclusion %:
-
-Competitor dominance %:
-
-Focus tier:
-Primary bottleneck:
-Notes:
-
-END SNAPSHOT`
-
 function extractField(text: string, ...labels: string[]): string {
   for (const label of labels) {
     const regex = new RegExp(`${label}\\s*[:\\-=]\\s*(.+)`, 'i')

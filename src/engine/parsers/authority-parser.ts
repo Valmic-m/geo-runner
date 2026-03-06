@@ -1,19 +1,6 @@
 import type { AuthoritySnapshot } from '@/types/authority'
 import type { ParseResult } from '@/types/common'
 
-export const AUTHORITY_TEMPLATE = `AUTHORITY SNAPSHOT
-
-Current authority sources:
-Industry directories:
-Media presence:
-Partner mentions:
-Certifications:
-Awards:
-Speaking engagements:
-Publications:
-
-END AUTHORITY SNAPSHOT`
-
 function extractList(text: string, ...labels: string[]): string[] {
   for (const label of labels) {
     const regex = new RegExp(`${label}\\s*[:\\-=]\\s*(.+)`, 'i')

@@ -11,7 +11,8 @@ import { generateEntityDefinition } from '@/engine/generators/entity-definition'
 import { formatSnapshot } from '@/engine/generators/snapshot-updater'
 
 export interface AnnualInput {
-  snapshotText: string
+  snapshotText?: string
+  snapshot?: ClientGeoSnapshot
   websiteExcerpts?: string
 }
 
@@ -27,11 +28,18 @@ export interface AnnualOutput {
 }
 
 export function runAnnualWorkflow(input: AnnualInput): AnnualOutput {
-  const snapshotResult = parseSnapshot(input.snapshotText)
-  if (!snapshotResult.data) {
-    throw new Error(`Failed to parse snapshot: ${snapshotResult.errors.join(', ')}`)
+  let snapshot: ClientGeoSnapshot
+  if (input.snapshot) {
+    snapshot = input.snapshot
+  } else if (input.snapshotText) {
+    const snapshotResult = parseSnapshot(input.snapshotText)
+    if (!snapshotResult.data) {
+      throw new Error(`Failed to parse snapshot: ${snapshotResult.errors.join(', ')}`)
+    }
+    snapshot = snapshotResult.data
+  } else {
+    throw new Error('Either snapshot or snapshotText is required')
   }
-  const snapshot = snapshotResult.data
 
   const diagnostics = analyzeSignals(snapshot.signals)
   const readinessScore = calculateReadinessScore(snapshot.signals)
