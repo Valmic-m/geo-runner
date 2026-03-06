@@ -52,6 +52,7 @@ export function QuarterlyPage() {
       <div>
         <h2 className="text-xl font-bold text-text">Quarterly Authority Review</h2>
         <p className="text-sm text-text-muted mt-1">Deep authority analysis, entity mapping, citation opportunities, and content expansion.</p>
+        <p className="text-xs text-text-muted mt-1">Use every 3 months for a deeper look at authority and citation gaps. Identifies external sites to target for mentions, maps entity relationships, and plans content expansion.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

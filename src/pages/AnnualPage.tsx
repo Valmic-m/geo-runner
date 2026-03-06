@@ -46,6 +46,7 @@ export function AnnualPage() {
       <div>
         <h2 className="text-xl font-bold text-text">Annual GEO Reset</h2>
         <p className="text-sm text-text-muted mt-1">Full category precision review, entity definition, and positioning improvements.</p>
+        <p className="text-xs text-text-muted mt-1">Run yearly to reassess category positioning, entity definitions, and messaging. Generates a full reset plan including knowledge graph mapping.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

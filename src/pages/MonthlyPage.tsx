@@ -55,6 +55,7 @@ export function MonthlyPage() {
       <div>
         <h2 className="text-xl font-bold text-text">Monthly GEO Cycle</h2>
         <p className="text-sm text-text-muted mt-1">Run a full monthly diagnostic with signal analysis, recommendations, and artifact generation.</p>
+        <p className="text-xs text-text-muted mt-1">This is the core GEO workflow. It scores all 12 signals, flags critical gaps, generates ready-to-publish content artifacts, and produces a deployment plan. Run monthly for each client.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
