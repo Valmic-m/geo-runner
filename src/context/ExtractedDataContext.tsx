@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback } from 'react'
 import type { ReactNode } from 'react'
+import type { EstimatedSignals } from '@/engine/analyzers/signal-estimator'
 
 export interface ExtractedData {
   primaryCategory: string
@@ -7,6 +8,14 @@ export interface ExtractedData {
   audience: string
   recommendations: string[]
   missingTrustSignals: string[]
+  geoScope: string
+  revenueModel: string
+  regulated: string
+  competitors: string[]
+  businessNameCandidates: string[]
+  estimatedSignals: EstimatedSignals
+  estimatedFocusTier: string
+  estimatedBottleneck: string
 }
 
 interface ExtractedDataContextValue {

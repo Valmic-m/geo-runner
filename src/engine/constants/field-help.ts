@@ -1,8 +1,8 @@
 export const FIELD_HELP: Record<string, string> = {
   // Business basics
   businessName: 'The official business or brand name as it should appear in AI responses.',
-  primaryCategory: 'The main service or product category (e.g., "Personal Injury Attorney", "Italian Restaurant", "SaaS Project Management Tool").',
-  secondaryCategory: 'An optional secondary category if the business spans multiple areas.',
+  primaryCategory: 'The main business type — what would someone search for to find this business? (e.g., "Personal Injury Attorney", "Italian Restaurant", "Plumber"). This is used to generate AI test prompts and content.',
+  secondaryCategory: 'An optional secondary business type if the business spans multiple areas (e.g., a law firm might be "Personal Injury Attorney" + "Workers Compensation Attorney").',
   audience: 'Who is the ideal customer? (e.g., "Small business owners", "Homeowners in Dallas", "Enterprise IT managers").',
   geoScope: 'The geographic area the business serves.',
   revenueModel: 'How the business generates revenue.',

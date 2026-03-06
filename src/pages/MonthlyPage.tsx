@@ -62,7 +62,7 @@ export function MonthlyPage() {
         <div className="space-y-6">
           <div>
             <h3 className="text-sm font-semibold text-text mb-3">Client GEO Snapshot</h3>
-            <SnapshotForm onSubmit={handleRun} isRunning={isRunning} initialData={extractedData ?? undefined} />
+            <SnapshotForm key={extractedData ? 'prefilled' : 'empty'} onSubmit={handleRun} isRunning={isRunning} initialData={extractedData ?? undefined} />
           </div>
 
           <div>
