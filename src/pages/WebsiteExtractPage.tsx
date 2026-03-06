@@ -42,6 +42,7 @@ export function WebsiteExtractPage() {
       <div>
         <h2 className="text-xl font-bold text-text">Website Content Extract</h2>
         <p className="text-sm text-text-muted mt-1">Analyze pasted website content to extract categories, audience, differentiators, and identify missing trust signals.</p>
+        <p className="text-xs text-text-muted mt-1">Recommended starting point for new clients. Paste website content and the tool extracts the information needed to fill out a Client GEO Snapshot.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

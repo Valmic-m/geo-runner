@@ -1,14 +1,14 @@
 import { NavLink } from 'react-router-dom'
 import { cn } from '@/lib/cn'
-import { Calendar, BarChart3, RotateCcw, FlaskConical, Globe } from 'lucide-react'
+import { Home, Globe, FlaskConical, Calendar, BarChart3, RotateCcw } from 'lucide-react'
 
 const tabs = [
-  { to: '/', label: 'Home', icon: BarChart3 },
+  { to: '/', label: 'Home', icon: Home },
+  { to: '/website-extract', label: 'Website Extract', icon: Globe },
+  { to: '/generate-tests', label: 'Generate Tests', icon: FlaskConical },
   { to: '/monthly', label: 'Monthly', icon: Calendar },
   { to: '/quarterly', label: 'Quarterly', icon: BarChart3 },
   { to: '/annual', label: 'Annual', icon: RotateCcw },
-  { to: '/generate-tests', label: 'Generate Tests', icon: FlaskConical },
-  { to: '/website-extract', label: 'Website Extract', icon: Globe },
 ]
 
 export function TabNav() {
