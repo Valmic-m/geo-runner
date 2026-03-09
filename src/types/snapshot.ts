@@ -25,6 +25,13 @@ export interface PlatformVisibility {
 
 export type PlatformKey = keyof PlatformVisibility
 
+export interface Competitor {
+  url: string
+  name: string
+  category?: string
+  description?: string
+}
+
 export interface ClientGeoSnapshot {
   businessName: string
   primaryCategory: string
@@ -33,11 +40,12 @@ export interface ClientGeoSnapshot {
   geoScope: string
   revenueModel: string
   regulated: string
-  competitors: string[]
+  competitors: Competitor[]
   signals: SignalScores
   platformVisibility: PlatformVisibility
   competitorDominance: number
   focusTier: string
   primaryBottleneck: string
   notes: string
+  assessmentAnswers?: import('./assessment').AssessmentAnswer[]
 }

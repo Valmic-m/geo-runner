@@ -10,7 +10,7 @@ export function generateTestPrompts(snapshot: ClientGeoSnapshot): TestPrompt[] {
   const name = snapshot.businessName || '[Business Name]'
   const category = snapshot.primaryCategory || '[Category]'
   const location = snapshot.geoScope || '[Location]'
-  const competitors = snapshot.competitors.length > 0 ? snapshot.competitors : ['[Competitor]']
+  const competitors = snapshot.competitors.length > 0 ? snapshot.competitors.map((c) => c.name) : ['[Competitor]']
 
   const platforms: PlatformKey[] = ['chatgpt', 'claude', 'gemini', 'perplexity', 'aiOverviews']
   const prompts: TestPrompt[] = []

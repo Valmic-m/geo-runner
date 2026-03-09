@@ -1,0 +1,240 @@
+import type { AssessmentQuestion } from '@/types/assessment'
+
+export const PLATFORM_QUESTIONS: AssessmentQuestion[] = [
+  // ── ChatGPT ─────────────────────────────────────────────────────
+  {
+    id: 'pt-chatgpt-1',
+    platformKey: 'chatgpt',
+    text: 'Have you tested {{businessName}} on ChatGPT?',
+    answerType: 'yes-no',
+    options: [
+      { value: 'yes', label: 'Yes', scoreContribution: 0.0 },
+      { value: 'no', label: 'No / not sure', scoreContribution: 0.0 },
+    ],
+    cycle: 'all',
+    weight: 0.0,
+    helpText: 'This determines whether the follow-up questions apply.',
+  },
+  {
+    id: 'pt-chatgpt-2',
+    platformKey: 'chatgpt',
+    text: 'When you ask ChatGPT about {{category}} in {{location}}, does it mention {{businessName}}?',
+    answerType: 'yes-sometimes-no',
+    options: [
+      { value: 'yes', label: 'Yes, consistently', scoreContribution: 1.0 },
+      { value: 'sometimes', label: 'Sometimes', scoreContribution: 0.5 },
+      { value: 'no', label: 'Never', scoreContribution: 0.0 },
+    ],
+    conditionalOn: { questionId: 'pt-chatgpt-1', answerValues: ['yes'] },
+    cycle: 'all',
+    weight: 0.35,
+  },
+  {
+    id: 'pt-chatgpt-3',
+    platformKey: 'chatgpt',
+    text: 'Does ChatGPT accurately describe what {{businessName}} does?',
+    answerType: 'yes-partially-no',
+    options: [
+      { value: 'yes', label: 'Yes, accurate', scoreContribution: 1.0 },
+      { value: 'partially', label: 'Partially correct', scoreContribution: 0.5 },
+      { value: 'no', label: 'Inaccurate or no info', scoreContribution: 0.0 },
+    ],
+    conditionalOn: { questionId: 'pt-chatgpt-1', answerValues: ['yes'] },
+    cycle: 'all',
+    weight: 0.35,
+  },
+  {
+    id: 'pt-chatgpt-4',
+    platformKey: 'chatgpt',
+    text: 'When asking ChatGPT "best {{category}} in {{location}}", is {{businessName}} listed?',
+    answerType: 'yes-no',
+    options: [
+      { value: 'yes', label: 'Yes', scoreContribution: 1.0 },
+      { value: 'no', label: 'No', scoreContribution: 0.0 },
+    ],
+    conditionalOn: { questionId: 'pt-chatgpt-1', answerValues: ['yes'] },
+    cycle: 'monthly',
+    weight: 0.3,
+  },
+
+  // ── Gemini ──────────────────────────────────────────────────────
+  {
+    id: 'pt-gemini-1',
+    platformKey: 'gemini',
+    text: 'Have you tested {{businessName}} on Google Gemini?',
+    answerType: 'yes-no',
+    options: [
+      { value: 'yes', label: 'Yes', scoreContribution: 0.0 },
+      { value: 'no', label: 'No / not sure', scoreContribution: 0.0 },
+    ],
+    cycle: 'all',
+    weight: 0.0,
+  },
+  {
+    id: 'pt-gemini-2',
+    platformKey: 'gemini',
+    text: 'When you ask Gemini about {{category}} in {{location}}, does it mention {{businessName}}?',
+    answerType: 'yes-sometimes-no',
+    options: [
+      { value: 'yes', label: 'Yes, consistently', scoreContribution: 1.0 },
+      { value: 'sometimes', label: 'Sometimes', scoreContribution: 0.5 },
+      { value: 'no', label: 'Never', scoreContribution: 0.0 },
+    ],
+    conditionalOn: { questionId: 'pt-gemini-1', answerValues: ['yes'] },
+    cycle: 'all',
+    weight: 0.35,
+  },
+  {
+    id: 'pt-gemini-3',
+    platformKey: 'gemini',
+    text: 'Does Gemini accurately describe what {{businessName}} does?',
+    answerType: 'yes-partially-no',
+    options: [
+      { value: 'yes', label: 'Yes, accurate', scoreContribution: 1.0 },
+      { value: 'partially', label: 'Partially correct', scoreContribution: 0.5 },
+      { value: 'no', label: 'Inaccurate or no info', scoreContribution: 0.0 },
+    ],
+    conditionalOn: { questionId: 'pt-gemini-1', answerValues: ['yes'] },
+    cycle: 'all',
+    weight: 0.35,
+  },
+  {
+    id: 'pt-gemini-4',
+    platformKey: 'gemini',
+    text: 'When asking Gemini "best {{category}} in {{location}}", is {{businessName}} listed?',
+    answerType: 'yes-no',
+    options: [
+      { value: 'yes', label: 'Yes', scoreContribution: 1.0 },
+      { value: 'no', label: 'No', scoreContribution: 0.0 },
+    ],
+    conditionalOn: { questionId: 'pt-gemini-1', answerValues: ['yes'] },
+    cycle: 'monthly',
+    weight: 0.3,
+  },
+
+  // ── Claude ──────────────────────────────────────────────────────
+  {
+    id: 'pt-claude-1',
+    platformKey: 'claude',
+    text: 'Have you tested {{businessName}} on Claude?',
+    answerType: 'yes-no',
+    options: [
+      { value: 'yes', label: 'Yes', scoreContribution: 0.0 },
+      { value: 'no', label: 'No / not sure', scoreContribution: 0.0 },
+    ],
+    cycle: 'all',
+    weight: 0.0,
+  },
+  {
+    id: 'pt-claude-2',
+    platformKey: 'claude',
+    text: 'When you ask Claude about {{category}} providers, does it mention {{businessName}}?',
+    answerType: 'yes-sometimes-no',
+    options: [
+      { value: 'yes', label: 'Yes, consistently', scoreContribution: 1.0 },
+      { value: 'sometimes', label: 'Sometimes', scoreContribution: 0.5 },
+      { value: 'no', label: 'Never', scoreContribution: 0.0 },
+    ],
+    conditionalOn: { questionId: 'pt-claude-1', answerValues: ['yes'] },
+    cycle: 'all',
+    weight: 0.5,
+  },
+  {
+    id: 'pt-claude-3',
+    platformKey: 'claude',
+    text: 'Does Claude accurately describe what {{businessName}} does?',
+    answerType: 'yes-partially-no',
+    options: [
+      { value: 'yes', label: 'Yes, accurate', scoreContribution: 1.0 },
+      { value: 'partially', label: 'Partially correct', scoreContribution: 0.5 },
+      { value: 'no', label: 'Inaccurate or no info', scoreContribution: 0.0 },
+    ],
+    conditionalOn: { questionId: 'pt-claude-1', answerValues: ['yes'] },
+    cycle: 'all',
+    weight: 0.5,
+  },
+
+  // ── Perplexity ──────────────────────────────────────────────────
+  {
+    id: 'pt-perplexity-1',
+    platformKey: 'perplexity',
+    text: 'Have you tested {{businessName}} on Perplexity?',
+    answerType: 'yes-no',
+    options: [
+      { value: 'yes', label: 'Yes', scoreContribution: 0.0 },
+      { value: 'no', label: 'No / not sure', scoreContribution: 0.0 },
+    ],
+    cycle: 'all',
+    weight: 0.0,
+  },
+  {
+    id: 'pt-perplexity-2',
+    platformKey: 'perplexity',
+    text: 'When you search {{category}} on Perplexity, does {{businessName}} appear in the results or citations?',
+    answerType: 'yes-sometimes-no',
+    options: [
+      { value: 'yes', label: 'Yes, consistently', scoreContribution: 1.0 },
+      { value: 'sometimes', label: 'Sometimes', scoreContribution: 0.5 },
+      { value: 'no', label: 'Never', scoreContribution: 0.0 },
+    ],
+    conditionalOn: { questionId: 'pt-perplexity-1', answerValues: ['yes'] },
+    cycle: 'all',
+    weight: 0.5,
+  },
+  {
+    id: 'pt-perplexity-3',
+    platformKey: 'perplexity',
+    text: 'Does Perplexity cite {{businessName}}\'s website as a source when answering related queries?',
+    answerType: 'yes-no',
+    options: [
+      { value: 'yes', label: 'Yes', scoreContribution: 1.0 },
+      { value: 'no', label: 'No', scoreContribution: 0.0 },
+    ],
+    conditionalOn: { questionId: 'pt-perplexity-1', answerValues: ['yes'] },
+    cycle: 'quarterly',
+    weight: 0.5,
+  },
+
+  // ── AI Overviews ────────────────────────────────────────────────
+  {
+    id: 'pt-aio-1',
+    platformKey: 'aiOverviews',
+    text: 'When you search for {{category}}-related terms on Google, do AI Overviews appear?',
+    answerType: 'yes-sometimes-no',
+    options: [
+      { value: 'yes', label: 'Yes, frequently', scoreContribution: 0.0 },
+      { value: 'sometimes', label: 'Sometimes', scoreContribution: 0.0 },
+      { value: 'no', label: 'Rarely / never', scoreContribution: 0.0 },
+    ],
+    cycle: 'all',
+    weight: 0.0,
+    helpText: 'This helps us understand if AI Overviews are active in your industry.',
+  },
+  {
+    id: 'pt-aio-2',
+    platformKey: 'aiOverviews',
+    text: 'Is {{businessName}} mentioned or cited in Google AI Overviews for relevant searches?',
+    answerType: 'yes-sometimes-no',
+    options: [
+      { value: 'yes', label: 'Yes, consistently', scoreContribution: 1.0 },
+      { value: 'sometimes', label: 'Sometimes', scoreContribution: 0.5 },
+      { value: 'no', label: 'Never', scoreContribution: 0.0 },
+    ],
+    conditionalOn: { questionId: 'pt-aio-1', answerValues: ['yes', 'sometimes'] },
+    cycle: 'all',
+    weight: 0.5,
+  },
+  {
+    id: 'pt-aio-3',
+    platformKey: 'aiOverviews',
+    text: 'Is the {{businessName}} website linked as a source in any AI Overview panels?',
+    answerType: 'yes-no',
+    options: [
+      { value: 'yes', label: 'Yes', scoreContribution: 1.0 },
+      { value: 'no', label: 'No', scoreContribution: 0.0 },
+    ],
+    conditionalOn: { questionId: 'pt-aio-1', answerValues: ['yes', 'sometimes'] },
+    cycle: 'monthly',
+    weight: 0.5,
+  },
+]

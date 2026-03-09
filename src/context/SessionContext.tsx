@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import type { EstimatedSignals } from '@/engine/analyzers/signal-estimator'
-import type { ClientGeoSnapshot } from '@/types/snapshot'
+import type { ClientGeoSnapshot, Competitor } from '@/types/snapshot'
+import { migrateCompetitors } from '@/lib/competitor-utils'
 
 export interface ExtractedData {
   primaryCategory: string
@@ -12,7 +13,7 @@ export interface ExtractedData {
   geoScope: string
   revenueModel: string
   regulated: string
-  competitors: string[]
+  competitors: Competitor[]
   businessNameCandidates: string[]
   estimatedSignals: EstimatedSignals
   estimatedFocusTier: string
@@ -30,15 +31,31 @@ interface SessionState {
 
 const STORAGE_KEY = 'geo-runner-session'
 
+function migrateSnapshot(snapshot: ClientGeoSnapshot | null): ClientGeoSnapshot | null {
+  if (!snapshot) return null
+  if (Array.isArray(snapshot.competitors) && snapshot.competitors.length > 0 && typeof snapshot.competitors[0] === 'string') {
+    return { ...snapshot, competitors: migrateCompetitors(snapshot.competitors) }
+  }
+  return snapshot
+}
+
+function migrateExtractedData(data: ExtractedData | null): ExtractedData | null {
+  if (!data) return null
+  if (Array.isArray(data.competitors) && data.competitors.length > 0 && typeof data.competitors[0] === 'string') {
+    return { ...data, competitors: migrateCompetitors(data.competitors) }
+  }
+  return data
+}
+
 function loadSession(): SessionState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
       return {
-        extractedData: parsed.extractedData ?? null,
-        lastSnapshot: parsed.lastSnapshot ?? null,
-        currentSnapshot: parsed.currentSnapshot ?? null,
+        extractedData: migrateExtractedData(parsed.extractedData ?? null),
+        lastSnapshot: migrateSnapshot(parsed.lastSnapshot ?? null),
+        currentSnapshot: migrateSnapshot(parsed.currentSnapshot ?? null),
         completedWorkflows: parsed.completedWorkflows ?? [],
       }
     }

@@ -1,12 +1,18 @@
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import type { ClientGeoSnapshot, SignalScores, SignalKey } from '@/types/snapshot'
+import type { ClientGeoSnapshot, SignalScores, SignalKey, Competitor } from '@/types/snapshot'
+import type { AssessmentAnswer, AssessmentCycle } from '@/types/assessment'
 import { SIGNAL_DEFINITIONS } from '@/engine/constants/signal-definitions'
+import { SIGNAL_QUESTIONS } from '@/engine/constants/signal-questions'
+import { PLATFORM_QUESTIONS } from '@/engine/constants/platform-questions'
+import { generateCompetitorQuestions } from '@/engine/constants/competitor-questions'
+import { computeSignalScores, computePlatformVisibility, computeCompetitorDominance } from '@/engine/analyzers/assessment-scorer'
 import { FIELD_HELP } from '@/engine/constants/field-help'
 import { FormField } from '@/components/forms/FormField'
 import { StepIndicator } from '@/components/forms/StepIndicator'
-import { SignalScoreInput } from '@/components/forms/SignalScoreInput'
 import { CategorySelect } from '@/components/forms/CategorySelect'
+import { AssessmentSection } from '@/components/forms/AssessmentSection'
+import { CompetitorInput } from '@/components/forms/CompetitorInput'
 import { cn } from '@/lib/cn'
 import type { EstimatedSignals } from '@/engine/analyzers/signal-estimator'
 
@@ -17,7 +23,7 @@ export interface SnapshotInitialData {
   geoScope?: string
   revenueModel?: string
   regulated?: string
-  competitors?: string[]
+  competitors?: Competitor[]
   businessNameCandidates?: string[]
   estimatedSignals?: EstimatedSignals
   estimatedFocusTier?: string
@@ -31,6 +37,7 @@ interface SnapshotFormProps {
   initialSnapshot?: ClientGeoSnapshot
   previousSignals?: SignalScores
   submitLabel?: string
+  cycle?: AssessmentCycle
 }
 
 const STEPS = ['Business Info', 'GEO Signals', 'AI Visibility', 'Focus & Notes']
@@ -49,77 +56,126 @@ const BOTTLENECK_OPTIONS = [
   'Other',
 ]
 
-function buildInitialSignals(estimated?: EstimatedSignals): SignalScores {
-  if (!estimated) {
-    return {
-      entityClarity: 0, brandMentions: 0, comparisonPresence: 0, faqCoverage: 0,
-      structuredData: 0, reviews: 0, authoritySignals: 0, citations: 0,
-      gbpCompleteness: 0, knowledgeGraphSignals: 0, messagingConsistency: 0, credibilitySignals: 0,
-    }
-  }
-  const scores = {} as SignalScores
+function buildFallbackSignals(estimated?: EstimatedSignals): Partial<SignalScores> {
+  if (!estimated) return {}
+  const scores = {} as Partial<SignalScores>
   for (const key of Object.keys(estimated) as SignalKey[]) {
     scores[key] = estimated[key].score
   }
   return scores
 }
 
-export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot, previousSignals, submitLabel }: SnapshotFormProps) {
+export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot, previousSignals, submitLabel, cycle = 'annual' }: SnapshotFormProps) {
   const hasPrefilledData = !!initialSnapshot || !!initialData?.estimatedSignals || !!(initialData?.primaryCategory || initialData?.secondaryCategory || initialData?.audience)
   const [step, setStep] = useState(0)
-  const [form, setForm] = useState({
-    businessName: initialSnapshot?.businessName || initialData?.businessNameCandidates?.[0] || '',
-    primaryCategory: initialSnapshot?.primaryCategory || initialData?.primaryCategory || '',
-    secondaryCategory: initialSnapshot?.secondaryCategory || initialData?.secondaryCategory || '',
-    audience: initialSnapshot?.audience || initialData?.audience || '',
-    geoScope: initialSnapshot?.geoScope || initialData?.geoScope || '',
-    revenueModel: initialSnapshot?.revenueModel || initialData?.revenueModel || '',
-    regulated: initialSnapshot?.regulated || initialData?.regulated || '',
-    competitors: initialSnapshot?.competitors?.join(', ') || initialData?.competitors?.join(', ') || '',
-    signals: initialSnapshot?.signals || buildInitialSignals(initialData?.estimatedSignals),
-    chatgpt: initialSnapshot?.platformVisibility?.chatgpt || 0,
-    gemini: initialSnapshot?.platformVisibility?.gemini || 0,
-    claude: initialSnapshot?.platformVisibility?.claude || 0,
-    perplexity: initialSnapshot?.platformVisibility?.perplexity || 0,
-    aiOverviews: initialSnapshot?.platformVisibility?.aiOverviews || 0,
-    competitorDominance: initialSnapshot?.competitorDominance || 0,
-    focusTier: initialSnapshot?.focusTier || initialData?.estimatedFocusTier || '',
-    primaryBottleneck: initialSnapshot?.primaryBottleneck || initialData?.estimatedBottleneck || '',
-    notes: initialSnapshot?.notes || '',
-  })
 
-  const updateField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
-    setForm((prev) => ({ ...prev, [key]: value }))
-  }
+  // Business info fields
+  const [businessName, setBusinessName] = useState(initialSnapshot?.businessName || initialData?.businessNameCandidates?.[0] || '')
+  const [primaryCategory, setPrimaryCategory] = useState(initialSnapshot?.primaryCategory || initialData?.primaryCategory || '')
+  const [secondaryCategory, setSecondaryCategory] = useState(initialSnapshot?.secondaryCategory || initialData?.secondaryCategory || '')
+  const [audience, setAudience] = useState(initialSnapshot?.audience || initialData?.audience || '')
+  const [geoScope, setGeoScope] = useState(initialSnapshot?.geoScope || initialData?.geoScope || '')
+  const [revenueModel, setRevenueModel] = useState(initialSnapshot?.revenueModel || initialData?.revenueModel || '')
+  const [regulated, setRegulated] = useState(initialSnapshot?.regulated || initialData?.regulated || '')
+  const [competitors, setCompetitors] = useState<Competitor[]>(initialSnapshot?.competitors || initialData?.competitors || [])
 
-  const updateSignal = (key: keyof SignalScores, value: number) => {
-    setForm((prev) => ({ ...prev, signals: { ...prev.signals, [key]: value } }))
-  }
+  // Assessment answers
+  const [answers, setAnswers] = useState<AssessmentAnswer[]>(initialSnapshot?.assessmentAnswers || [])
 
-  const canSubmit = form.businessName.trim() && form.primaryCategory.trim()
+  // Focus & notes
+  const [focusTier, setFocusTier] = useState(initialSnapshot?.focusTier || initialData?.estimatedFocusTier || '')
+  const [primaryBottleneck, setPrimaryBottleneck] = useState(initialSnapshot?.primaryBottleneck || initialData?.estimatedBottleneck || '')
+  const [notes, setNotes] = useState(initialSnapshot?.notes || '')
+
+  // Template vars for question interpolation
+  const templateVars = useMemo(() => ({
+    businessName: businessName || '[Business Name]',
+    category: primaryCategory || '[Category]',
+    location: geoScope || '[Location]',
+  }), [businessName, primaryCategory, geoScope])
+
+  // Competitor questions generated dynamically
+  const competitorQuestions = useMemo(
+    () => generateCompetitorQuestions(competitors),
+    [competitors],
+  )
+
+  // All questions combined for scoring
+  const allSignalQuestions = SIGNAL_QUESTIONS
+  const allPlatformQuestions = PLATFORM_QUESTIONS
+
+  // Fallback scores from website scan estimates
+  const fallbackSignals = useMemo(() => buildFallbackSignals(initialData?.estimatedSignals), [initialData?.estimatedSignals])
+
+  // Live computed scores
+  const computedSignals = useMemo(
+    () => computeSignalScores(answers, allSignalQuestions, fallbackSignals),
+    [answers, allSignalQuestions, fallbackSignals],
+  )
+
+  const computedVisibility = useMemo(
+    () => computePlatformVisibility(answers, allPlatformQuestions),
+    [answers, allPlatformQuestions],
+  )
+
+  const computedCompetitorDom = useMemo(
+    () => computeCompetitorDominance(answers, competitorQuestions),
+    [answers, competitorQuestions],
+  )
+
+  const handleAnswer = useCallback((questionId: string, value: string) => {
+    setAnswers((prev) => {
+      const filtered = prev.filter((a) => a.questionId !== questionId)
+      return [...filtered, { questionId, value }]
+    })
+  }, [])
+
+  // Group signal questions by signal for sections
+  const signalGroups = useMemo(() => {
+    const groups: { key: SignalKey; label: string; questions: typeof SIGNAL_QUESTIONS }[] = []
+    for (const def of SIGNAL_DEFINITIONS) {
+      const qs = allSignalQuestions.filter((q) => q.signalKey === def.key)
+      if (qs.length > 0) {
+        groups.push({ key: def.key, label: def.label, questions: qs })
+      }
+    }
+    return groups
+  }, [allSignalQuestions])
+
+  // Group platform questions by platform
+  const platformGroups = useMemo(() => {
+    const platforms = [
+      { key: 'chatgpt' as const, label: 'ChatGPT' },
+      { key: 'gemini' as const, label: 'Google Gemini' },
+      { key: 'claude' as const, label: 'Claude' },
+      { key: 'perplexity' as const, label: 'Perplexity' },
+      { key: 'aiOverviews' as const, label: 'AI Overviews' },
+    ]
+    return platforms.map((p) => ({
+      ...p,
+      questions: allPlatformQuestions.filter((q) => q.platformKey === p.key),
+    }))
+  }, [allPlatformQuestions])
+
+  const canSubmit = businessName.trim() && primaryCategory.trim()
 
   const handleSubmit = () => {
     const snapshot: ClientGeoSnapshot = {
-      businessName: form.businessName,
-      primaryCategory: form.primaryCategory,
-      secondaryCategory: form.secondaryCategory,
-      audience: form.audience,
-      geoScope: form.geoScope,
-      revenueModel: form.revenueModel,
-      regulated: form.regulated,
-      competitors: form.competitors.split(',').map((s) => s.trim()).filter(Boolean),
-      signals: form.signals,
-      platformVisibility: {
-        chatgpt: form.chatgpt,
-        gemini: form.gemini,
-        claude: form.claude,
-        perplexity: form.perplexity,
-        aiOverviews: form.aiOverviews,
-      },
-      competitorDominance: form.competitorDominance,
-      focusTier: form.focusTier,
-      primaryBottleneck: form.primaryBottleneck,
-      notes: form.notes,
+      businessName,
+      primaryCategory,
+      secondaryCategory,
+      audience,
+      geoScope,
+      revenueModel,
+      regulated,
+      competitors,
+      signals: computedSignals,
+      platformVisibility: computedVisibility,
+      competitorDominance: computedCompetitorDom,
+      focusTier,
+      primaryBottleneck,
+      notes,
+      assessmentAnswers: answers,
     }
     onSubmit(snapshot)
   }
@@ -149,8 +205,8 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot
             <FormField label="Business Name" helpText={FIELD_HELP.businessName} required>
               <input
                 type="text"
-                value={form.businessName}
-                onChange={(e) => updateField('businessName', e.target.value)}
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
                 placeholder="e.g., Acme Plumbing Co."
                 className={inputClass}
               />
@@ -158,16 +214,16 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot
 
             <FormField label="Primary Category" helpText={FIELD_HELP.primaryCategory} required>
               <CategorySelect
-                value={form.primaryCategory}
-                onChange={(v) => updateField('primaryCategory', v)}
+                value={primaryCategory}
+                onChange={setPrimaryCategory}
                 placeholder="Search or select a category..."
               />
             </FormField>
 
             <FormField label="Secondary Category" helpText={FIELD_HELP.secondaryCategory}>
               <CategorySelect
-                value={form.secondaryCategory}
-                onChange={(v) => updateField('secondaryCategory', v)}
+                value={secondaryCategory}
+                onChange={setSecondaryCategory}
                 placeholder="Optional — search or select..."
               />
             </FormField>
@@ -175,8 +231,8 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot
             <FormField label="Target Audience" helpText={FIELD_HELP.audience}>
               <input
                 type="text"
-                value={form.audience}
-                onChange={(e) => updateField('audience', e.target.value)}
+                value={audience}
+                onChange={(e) => setAudience(e.target.value)}
                 placeholder="e.g., Small business owners in Austin, TX"
                 className={inputClass}
               />
@@ -185,8 +241,8 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot
             <div className="grid grid-cols-2 gap-3">
               <FormField label="Geographic Scope" helpText={FIELD_HELP.geoScope}>
                 <select
-                  value={form.geoScope}
-                  onChange={(e) => updateField('geoScope', e.target.value)}
+                  value={geoScope}
+                  onChange={(e) => setGeoScope(e.target.value)}
                   className={selectClass}
                 >
                   <option value="">Select...</option>
@@ -196,8 +252,8 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot
 
               <FormField label="Revenue Model" helpText={FIELD_HELP.revenueModel}>
                 <select
-                  value={form.revenueModel}
-                  onChange={(e) => updateField('revenueModel', e.target.value)}
+                  value={revenueModel}
+                  onChange={(e) => setRevenueModel(e.target.value)}
                   className={selectClass}
                 >
                   <option value="">Select...</option>
@@ -208,41 +264,45 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot
 
             <FormField label="Regulated Industry?" helpText={FIELD_HELP.regulated}>
               <select
-                value={form.regulated}
-                onChange={(e) => updateField('regulated', e.target.value)}
+                value={regulated}
+                onChange={(e) => setRegulated(e.target.value)}
                 className={selectClass}
               >
                 <option value="">Select...</option>
                 {REGULATED_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
               </select>
             </FormField>
+
+            <FormField label="Competitors" helpText="Add competitor websites to integrate them into your analysis, recommendations, and comparison content.">
+              <CompetitorInput
+                competitors={competitors}
+                onChange={setCompetitors}
+              />
+            </FormField>
           </>
         )}
 
         {step === 1 && (
           <>
-            {hasPrefilledData && initialData?.estimatedSignals ? (
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm text-text">
-                <span className="text-primary shrink-0 mt-0.5">&#x2713;</span>
-                Signals were auto-estimated from your website scan. Review and adjust as needed.
-                Confidence: green = high, yellow = medium, gray = needs manual check.
-              </div>
-            ) : (
-              <p className="text-xs text-text-muted">
-                Rate each signal from 1 (not present) to 5 (strong). Hover the info icon for guidance on how to assess each one.
-              </p>
-            )}
-            <div className="divide-y divide-border">
-              {SIGNAL_DEFINITIONS.map((signal) => (
-                <SignalScoreInput
-                  key={signal.key}
-                  label={signal.label}
-                  description={FIELD_HELP[signal.key] || signal.description}
-                  value={form.signals[signal.key]}
-                  onChange={(v) => updateSignal(signal.key, v)}
-                  confidence={initialData?.estimatedSignals?.[signal.key]?.confidence}
-                  reason={initialData?.estimatedSignals?.[signal.key]?.reason}
-                  previousValue={previousSignals?.[signal.key]}
+            <p className="text-xs text-text-muted">
+              Answer the questions below to assess each GEO signal. Your scores are computed automatically based on your responses.
+              {cycle === 'monthly' && ' Quick monthly check — fewer questions.'}
+              {cycle === 'quarterly' && ' Quarterly review — moderate depth.'}
+              {cycle === 'annual' && ' Full annual assessment — all questions.'}
+            </p>
+            <div className="space-y-3">
+              {signalGroups.map((group) => (
+                <AssessmentSection
+                  key={group.key}
+                  title={group.label}
+                  questions={group.questions}
+                  answers={answers}
+                  onAnswer={handleAnswer}
+                  templateVars={templateVars}
+                  cycle={cycle}
+                  computedScore={computedSignals[group.key]}
+                  scoreMax={5}
+                  defaultOpen={false}
                 />
               ))}
             </div>
@@ -252,109 +312,37 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot
         {step === 2 && (
           <>
             <p className="text-xs text-text-muted">
-              Test your visibility on each AI platform by asking 10 relevant questions about your category. Count how many mention your business.
+              Test your visibility on each AI platform by answering the guided questions below. Your visibility percentage is computed from your answers.
             </p>
-
-            <div className="grid grid-cols-1 gap-4">
-              <FormField label="ChatGPT Inclusion %" helpText={FIELD_HELP.chatgptInclusion}>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={form.chatgpt || ''}
-                    onChange={(e) => updateField('chatgpt', Number(e.target.value))}
-                    placeholder="0"
-                    className={cn(inputClass, 'w-24')}
-                  />
-                  <span className="text-sm text-text-muted">%</span>
-                </div>
-              </FormField>
-
-              <FormField label="Gemini Inclusion %" helpText={FIELD_HELP.geminiInclusion}>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={form.gemini || ''}
-                    onChange={(e) => updateField('gemini', Number(e.target.value))}
-                    placeholder="0"
-                    className={cn(inputClass, 'w-24')}
-                  />
-                  <span className="text-sm text-text-muted">%</span>
-                </div>
-              </FormField>
-
-              <FormField label="Claude Inclusion %" helpText={FIELD_HELP.claudeInclusion}>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={form.claude || ''}
-                    onChange={(e) => updateField('claude', Number(e.target.value))}
-                    placeholder="0"
-                    className={cn(inputClass, 'w-24')}
-                  />
-                  <span className="text-sm text-text-muted">%</span>
-                </div>
-              </FormField>
-
-              <FormField label="Perplexity Inclusion %" helpText={FIELD_HELP.perplexityInclusion}>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={form.perplexity || ''}
-                    onChange={(e) => updateField('perplexity', Number(e.target.value))}
-                    placeholder="0"
-                    className={cn(inputClass, 'w-24')}
-                  />
-                  <span className="text-sm text-text-muted">%</span>
-                </div>
-              </FormField>
-
-              <FormField label="AI Overviews Inclusion %" helpText={FIELD_HELP.aiOverviewsInclusion}>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={form.aiOverviews || ''}
-                    onChange={(e) => updateField('aiOverviews', Number(e.target.value))}
-                    placeholder="0"
-                    className={cn(inputClass, 'w-24')}
-                  />
-                  <span className="text-sm text-text-muted">%</span>
-                </div>
-              </FormField>
-
-              <FormField label="Competitor Dominance %" helpText={FIELD_HELP.competitorDominance}>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={form.competitorDominance || ''}
-                    onChange={(e) => updateField('competitorDominance', Number(e.target.value))}
-                    placeholder="0"
-                    className={cn(inputClass, 'w-24')}
-                  />
-                  <span className="text-sm text-text-muted">%</span>
-                </div>
-              </FormField>
-
-              <FormField label="Competitors" helpText={FIELD_HELP.competitors}>
-                <input
-                  type="text"
-                  value={form.competitors}
-                  onChange={(e) => updateField('competitors', e.target.value)}
-                  placeholder="e.g., Competitor A, Competitor B, Competitor C"
-                  className={inputClass}
+            <div className="space-y-3">
+              {platformGroups.map((group) => (
+                <AssessmentSection
+                  key={group.key}
+                  title={group.label}
+                  questions={group.questions}
+                  answers={answers}
+                  onAnswer={handleAnswer}
+                  templateVars={templateVars}
+                  cycle={cycle}
+                  computedScore={computedVisibility[group.key]}
+                  scoreMax={100}
+                  defaultOpen={false}
                 />
-              </FormField>
+              ))}
+
+              {competitors.length > 0 && competitorQuestions.length > 0 && (
+                <AssessmentSection
+                  title="Competitor Dominance"
+                  questions={competitorQuestions}
+                  answers={answers}
+                  onAnswer={handleAnswer}
+                  templateVars={templateVars}
+                  cycle={cycle}
+                  computedScore={computedCompetitorDom}
+                  scoreMax={100}
+                  defaultOpen={false}
+                />
+              )}
             </div>
           </>
         )}
@@ -370,8 +358,8 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot
 
             <FormField label="Focus Tier" helpText={FIELD_HELP.focusTier}>
               <select
-                value={form.focusTier}
-                onChange={(e) => updateField('focusTier', e.target.value)}
+                value={focusTier}
+                onChange={(e) => setFocusTier(e.target.value)}
                 className={selectClass}
               >
                 <option value="">Select...</option>
@@ -381,8 +369,8 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot
 
             <FormField label="Primary Bottleneck" helpText={FIELD_HELP.primaryBottleneck}>
               <select
-                value={form.primaryBottleneck}
-                onChange={(e) => updateField('primaryBottleneck', e.target.value)}
+                value={primaryBottleneck}
+                onChange={(e) => setPrimaryBottleneck(e.target.value)}
                 className={selectClass}
               >
                 <option value="">Select...</option>
@@ -392,8 +380,8 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot
 
             <FormField label="Notes">
               <textarea
-                value={form.notes}
-                onChange={(e) => updateField('notes', e.target.value)}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
                 placeholder="Any additional context about the business or its GEO goals..."
                 rows={4}
                 className={cn(inputClass, 'resize-y')}

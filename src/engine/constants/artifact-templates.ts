@@ -1,4 +1,5 @@
 import type { ArtifactType } from '@/types/artifacts'
+import type { Competitor } from '@/types/snapshot'
 
 export interface ArtifactTemplate {
   type: ArtifactType
@@ -6,7 +7,12 @@ export interface ArtifactTemplate {
   description: string
   defaultDeployTargets: string[]
   externalTargets: string[]
-  promptTemplate: (businessName: string, category: string, audience: string) => string
+  promptTemplate: (businessName: string, category: string, audience: string, competitors?: Competitor[]) => string
+}
+
+function competitorNames(competitors?: Competitor[]): string {
+  if (!competitors || competitors.length === 0) return 'alternatives'
+  return competitors.map((c) => c.name).join(', ')
 }
 
 export const ARTIFACT_TEMPLATES: Record<ArtifactType, ArtifactTemplate> = {
@@ -25,8 +31,12 @@ export const ARTIFACT_TEMPLATES: Record<ArtifactType, ArtifactTemplate> = {
     description: 'Comprehensive FAQ content addressing common queries that AI models use to answer user questions',
     defaultDeployTargets: ['FAQ page', 'homepage', 'service pages'],
     externalTargets: ['Google Business Profile Q&A', 'community forums', 'industry knowledge bases'],
-    promptTemplate: (name, category, audience) =>
-      `Create a comprehensive FAQ set for ${name} (${category}).\n\nTarget audience: ${audience}\n\nGenerate 10-15 FAQs covering:\n1. What is ${name}?\n2. What services/products does ${name} offer?\n3. Who is ${name} best suited for?\n4. How does ${name} compare to alternatives?\n5. What makes ${name} different?\n6. Pricing/engagement model questions\n7. Trust and credibility questions\n8. Process/methodology questions\n9. Results/outcomes questions\n10. Getting started questions\n\nFormat each as Q: / A: with clear, concise answers. Include FAQ schema markup structure.`,
+    promptTemplate: (name, category, audience, competitors) => {
+      const compSection = competitors && competitors.length > 0
+        ? competitors.map((c) => `- How does ${name} compare to ${c.name}?`).join('\n')
+        : `- How does ${name} compare to alternatives?`
+      return `Create a comprehensive FAQ set for ${name} (${category}).\n\nTarget audience: ${audience}\n\nGenerate 10-15 FAQs covering:\n1. What is ${name}?\n2. What services/products does ${name} offer?\n3. Who is ${name} best suited for?\n4. Comparison questions:\n${compSection}\n5. What makes ${name} different?\n6. Pricing/engagement model questions\n7. Trust and credibility questions\n8. Process/methodology questions\n9. Results/outcomes questions\n10. Getting started questions\n\nFormat each as Q: / A: with clear, concise answers. Include FAQ schema markup structure.`
+    },
   },
   'comparison-page-outline': {
     type: 'comparison-page-outline',
@@ -34,8 +44,13 @@ export const ARTIFACT_TEMPLATES: Record<ArtifactType, ArtifactTemplate> = {
     description: 'Structured comparison content that positions the brand in competitive context',
     defaultDeployTargets: ['blog', 'resources section', 'comparison landing page'],
     externalTargets: ['guest articles', 'industry review sites', 'LinkedIn articles'],
-    promptTemplate: (name, category, audience) =>
-      `Create a comparison page outline for ${name} in the ${category} space.\n\nTarget audience: ${audience}\n\nThe outline should include:\n1. Page title: "${name} vs Alternatives: [Category] Comparison"\n2. Introduction: neutral overview of the ${category} landscape\n3. Comparison criteria (5-7 factors that matter to ${audience})\n4. Feature comparison table structure\n5. Detailed sections for each comparison criterion\n6. "Who is ${name} best for?" section\n7. "When to consider alternatives" section (builds trust through honesty)\n8. Conclusion with clear positioning\n\nKeep tone neutral and informative. AI models favor balanced comparison content over pure sales copy.`,
+    promptTemplate: (name, category, audience, competitors) => {
+      const compNames = competitorNames(competitors)
+      const compPages = competitors && competitors.length > 0
+        ? `\n\nCreate dedicated comparison sections for:\n${competitors.map((c) => `- "${name} vs ${c.name}": strengths, differences, and ideal use cases for each`).join('\n')}`
+        : ''
+      return `Create a comparison page outline for ${name} in the ${category} space.\n\nTarget audience: ${audience}\nKey competitors: ${compNames}${compPages}\n\nThe outline should include:\n1. Page title: "${name} vs ${compNames}: ${category} Comparison"\n2. Introduction: neutral overview of the ${category} landscape\n3. Comparison criteria (5-7 factors that matter to ${audience})\n4. Feature comparison table structure\n5. Detailed sections for each comparison criterion\n6. "Who is ${name} best for?" section\n7. "When to consider alternatives" section (builds trust through honesty)\n8. Conclusion with clear positioning\n\nKeep tone neutral and informative. AI models favor balanced comparison content over pure sales copy.`
+    },
   },
   'gbp-qa-set': {
     type: 'gbp-qa-set',
@@ -70,7 +85,11 @@ export const ARTIFACT_TEMPLATES: Record<ArtifactType, ArtifactTemplate> = {
     description: 'Thought leadership content that builds topical authority and generates citations',
     defaultDeployTargets: ['blog', 'resources section'],
     externalTargets: ['LinkedIn articles', 'industry publications', 'guest blog posts', 'newsletter pitches'],
-    promptTemplate: (name, category, audience) =>
-      `Create an authority article outline for ${name} to establish thought leadership in ${category}.\n\nTarget audience: ${audience}\n\nGenerate 3 article outlines:\n\nArticle 1: "[Industry Trend] Guide for [Audience]"\n- Educational, non-promotional\n- Positions ${name} as knowledgeable authority\n- Include data points and research references\n\nArticle 2: "How to Choose the Right [Category] Provider"\n- Buyer's guide format\n- Neutral criteria that favor ${name}'s strengths\n- Comparison framework\n\nArticle 3: "[Case Study/Results] in [Category]"\n- Results-focused narrative\n- Methodology explanation\n- Transferable insights\n\nFor each: title, target word count, key sections, SEO target keywords, and distribution strategy.`,
+    promptTemplate: (name, category, audience, competitors) => {
+      const compContext = competitors && competitors.length > 0
+        ? `\n\nCompetitive landscape: position against ${competitors.map((c) => c.name).join(', ')}`
+        : ''
+      return `Create an authority article outline for ${name} to establish thought leadership in ${category}.\n\nTarget audience: ${audience}${compContext}\n\nGenerate 3 article outlines:\n\nArticle 1: "[Industry Trend] Guide for [Audience]"\n- Educational, non-promotional\n- Positions ${name} as knowledgeable authority\n- Include data points and research references\n\nArticle 2: "How to Choose the Right [Category] Provider"\n- Buyer's guide format\n- Neutral criteria that favor ${name}'s strengths\n- Comparison framework\n\nArticle 3: "[Case Study/Results] in [Category]"\n- Results-focused narrative\n- Methodology explanation\n- Transferable insights\n\nFor each: title, target word count, key sections, SEO target keywords, and distribution strategy.`
+    },
   },
 }

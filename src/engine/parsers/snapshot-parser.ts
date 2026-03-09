@@ -66,7 +66,7 @@ export function parseSnapshot(rawText: string): ParseResult<ClientGeoSnapshot> {
     geoScope: extractField(rawText, 'geo scope', 'geographic scope', 'geography'),
     revenueModel: extractField(rawText, 'revenue model'),
     regulated: extractField(rawText, 'regulated'),
-    competitors: extractList(rawText, 'competitors'),
+    competitors: extractList(rawText, 'competitors').map((name) => ({ url: '', name })),
     signals,
     platformVisibility,
     competitorDominance: extractNumber(rawText, 'competitor dominance'),
