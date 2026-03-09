@@ -28,7 +28,9 @@ interface SnapshotFormProps {
   onSubmit: (snapshot: ClientGeoSnapshot) => void
   isRunning?: boolean
   initialData?: SnapshotInitialData
+  initialSnapshot?: ClientGeoSnapshot
   previousSignals?: SignalScores
+  submitLabel?: string
 }
 
 const STEPS = ['Business Info', 'GEO Signals', 'AI Visibility', 'Focus & Notes']
@@ -62,28 +64,28 @@ function buildInitialSignals(estimated?: EstimatedSignals): SignalScores {
   return scores
 }
 
-export function SnapshotForm({ onSubmit, isRunning, initialData, previousSignals }: SnapshotFormProps) {
-  const hasPrefilledData = !!initialData?.estimatedSignals || !!(initialData?.primaryCategory || initialData?.secondaryCategory || initialData?.audience)
+export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot, previousSignals, submitLabel }: SnapshotFormProps) {
+  const hasPrefilledData = !!initialSnapshot || !!initialData?.estimatedSignals || !!(initialData?.primaryCategory || initialData?.secondaryCategory || initialData?.audience)
   const [step, setStep] = useState(0)
   const [form, setForm] = useState({
-    businessName: initialData?.businessNameCandidates?.[0] || '',
-    primaryCategory: initialData?.primaryCategory || '',
-    secondaryCategory: initialData?.secondaryCategory || '',
-    audience: initialData?.audience || '',
-    geoScope: initialData?.geoScope || '',
-    revenueModel: initialData?.revenueModel || '',
-    regulated: initialData?.regulated || '',
-    competitors: initialData?.competitors?.join(', ') || '',
-    signals: buildInitialSignals(initialData?.estimatedSignals),
-    chatgpt: 0,
-    gemini: 0,
-    claude: 0,
-    perplexity: 0,
-    aiOverviews: 0,
-    competitorDominance: 0,
-    focusTier: initialData?.estimatedFocusTier || '',
-    primaryBottleneck: initialData?.estimatedBottleneck || '',
-    notes: '',
+    businessName: initialSnapshot?.businessName || initialData?.businessNameCandidates?.[0] || '',
+    primaryCategory: initialSnapshot?.primaryCategory || initialData?.primaryCategory || '',
+    secondaryCategory: initialSnapshot?.secondaryCategory || initialData?.secondaryCategory || '',
+    audience: initialSnapshot?.audience || initialData?.audience || '',
+    geoScope: initialSnapshot?.geoScope || initialData?.geoScope || '',
+    revenueModel: initialSnapshot?.revenueModel || initialData?.revenueModel || '',
+    regulated: initialSnapshot?.regulated || initialData?.regulated || '',
+    competitors: initialSnapshot?.competitors?.join(', ') || initialData?.competitors?.join(', ') || '',
+    signals: initialSnapshot?.signals || buildInitialSignals(initialData?.estimatedSignals),
+    chatgpt: initialSnapshot?.platformVisibility?.chatgpt || 0,
+    gemini: initialSnapshot?.platformVisibility?.gemini || 0,
+    claude: initialSnapshot?.platformVisibility?.claude || 0,
+    perplexity: initialSnapshot?.platformVisibility?.perplexity || 0,
+    aiOverviews: initialSnapshot?.platformVisibility?.aiOverviews || 0,
+    competitorDominance: initialSnapshot?.competitorDominance || 0,
+    focusTier: initialSnapshot?.focusTier || initialData?.estimatedFocusTier || '',
+    primaryBottleneck: initialSnapshot?.primaryBottleneck || initialData?.estimatedBottleneck || '',
+    notes: initialSnapshot?.notes || '',
   })
 
   const updateField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
@@ -436,7 +438,7 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, previousSignals
                 : 'bg-border text-text-muted cursor-not-allowed',
             )}
           >
-            {isRunning ? 'Running...' : 'Run Analysis'}
+            {isRunning ? 'Running...' : (submitLabel || 'Run Analysis')}
           </button>
         )}
       </div>

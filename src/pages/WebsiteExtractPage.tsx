@@ -9,13 +9,13 @@ import { ExportButton } from '@/components/shared/ExportButton'
 import { useWorkflow } from '@/hooks/useWorkflow'
 import { runWebsiteExtractWorkflow } from '@/engine/workflows/website-extract-workflow'
 import type { WebsiteExtractInput, WebsiteExtractOutput } from '@/engine/workflows/website-extract-workflow'
-import { useExtractedData } from '@/context/ExtractedDataContext'
+import { useSession } from '@/context/SessionContext'
 import { fetchUrlContent } from '@/lib/fetch-url'
 import { cn } from '@/lib/cn'
 
 export function WebsiteExtractPage() {
   const navigate = useNavigate()
-  const { setExtractedData, markWorkflowCompleted } = useExtractedData()
+  const { setExtractedData, markWorkflowCompleted } = useSession()
   const [url, setUrl] = useState('')
   const [isFetching, setIsFetching] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
@@ -24,7 +24,6 @@ export function WebsiteExtractPage() {
 
   const { result, error, isRunning, run } = useWorkflow<WebsiteExtractInput, WebsiteExtractOutput>(runWebsiteExtractWorkflow)
 
-  // Store extracted data in context when analysis completes
   useEffect(() => {
     if (result) {
       setExtractedData({
@@ -104,12 +103,12 @@ export function WebsiteExtractPage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-text">Website Content Extract</h2>
-        <p className="text-sm text-text-muted mt-1">Enter a website URL to automatically scan and analyze content for categories, audience, differentiators, and missing trust signals.</p>
-        <p className="text-xs text-text-muted mt-1">Recommended starting point for new clients. The tool extracts information needed to fill out a Client GEO Snapshot.</p>
+        <p className="text-sm text-text-muted mt-1">Scan a website to auto-detect categories, audience, and missing trust signals.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
+      {/* Input section — full-width centered when no results */}
+      {!result && (
+        <div className="max-w-2xl mx-auto space-y-4">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-text">
               Website URL <span className="text-danger ml-1">*</span>
@@ -199,37 +198,48 @@ export function WebsiteExtractPage() {
             )}
           </div>
         </div>
+      )}
 
+      {/* Results section — full-width */}
+      {result && (
         <div className="space-y-4">
-          {!result && (
-            <div className="text-center py-20 text-text-muted text-sm border border-dashed border-border rounded-lg">
-              Enter a website URL and scan it to see the analysis.
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-text">Website Analysis</h3>
+            <div className="flex gap-2">
+              <CopyButton text={exportContent} label="Copy All" />
+              <ExportButton content={exportContent} filename="geo-website-extract" />
             </div>
-          )}
+          </div>
 
-          {result && (
-            <>
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-text">Website Analysis</h3>
-                <div className="flex gap-2">
-                  <CopyButton text={exportContent} label="Copy All" />
-                  <ExportButton content={exportContent} filename="geo-website-extract" />
-                </div>
+          {/* Always visible: tone + missing signals summary */}
+          <div className="p-4 rounded-xl border border-border bg-surface">
+            <div className="text-sm">
+              <span className="font-medium">Content Tone:</span>{' '}
+              <span className={cn(
+                result.analysis.tone === 'heavily promotional' ? 'text-danger' :
+                result.analysis.tone === 'moderately promotional' ? 'text-warning' : 'text-success',
+              )}>
+                {result.analysis.tone}
+              </span>
+            </div>
+            {result.analysis.missingTrustSignals.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-border">
+                <p className="text-xs font-medium text-text-muted mb-1">Top Missing Trust Signals:</p>
+                <ul className="space-y-0.5">
+                  {result.analysis.missingTrustSignals.slice(0, 3).map((s, i) => (
+                    <li key={i} className="text-xs text-danger flex items-start gap-1.5">
+                      <span className="mt-0.5">&#x26A0;</span> {s}
+                    </li>
+                  ))}
+                </ul>
               </div>
+            )}
+          </div>
 
-              <div className="p-4 rounded-xl border border-border bg-surface">
-                <div className="text-sm">
-                  <span className="font-medium">Content Tone:</span>{' '}
-                  <span className={cn(
-                    result.analysis.tone === 'heavily promotional' ? 'text-danger' :
-                    result.analysis.tone === 'moderately promotional' ? 'text-warning' : 'text-success',
-                  )}>
-                    {result.analysis.tone}
-                  </span>
-                </div>
-              </div>
-
-              <CollapsibleSection title="Detected Categories" badge={`${result.analysis.categories.length}`}>
+          {/* Primary sections — default open */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <CollapsibleSection title="Detected Categories" badge={`${result.analysis.categories.length}`} priority="high">
                 {result.analysis.categories.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {result.analysis.categories.map((c, i) => (
@@ -237,7 +247,7 @@ export function WebsiteExtractPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-warning">No clear categories detected. The website needs explicit category positioning.</p>
+                  <p className="text-sm text-warning">No clear categories detected.</p>
                 )}
               </CollapsibleSection>
 
@@ -249,11 +259,21 @@ export function WebsiteExtractPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-warning">Target audience is unclear from the content.</p>
+                  <p className="text-sm text-warning">Target audience is unclear.</p>
                 )}
               </CollapsibleSection>
 
-              <CollapsibleSection title="Differentiators" badge={`${result.analysis.differentiators.length}`}>
+              <CollapsibleSection title="Recommendations" badge={`${result.analysis.recommendations.length}`} priority="high">
+                <ul className="space-y-2">
+                  {result.analysis.recommendations.map((r, i) => (
+                    <li key={i} className="text-sm p-3 rounded-lg bg-surface-alt">{r}</li>
+                  ))}
+                </ul>
+              </CollapsibleSection>
+            </div>
+
+            <div className="space-y-4">
+              <CollapsibleSection title="Differentiators" badge={`${result.analysis.differentiators.length}`} defaultOpen={false}>
                 {result.analysis.differentiators.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {result.analysis.differentiators.map((d, i) => (
@@ -265,7 +285,7 @@ export function WebsiteExtractPage() {
                 )}
               </CollapsibleSection>
 
-              <CollapsibleSection title="Missing Trust Signals" badge={`${result.analysis.missingTrustSignals.length}`}>
+              <CollapsibleSection title="Missing Trust Signals" badge={`${result.analysis.missingTrustSignals.length}`} defaultOpen={false}>
                 <ul className="space-y-1">
                   {result.analysis.missingTrustSignals.map((s, i) => (
                     <li key={i} className="text-sm text-danger flex items-start gap-2">
@@ -275,16 +295,8 @@ export function WebsiteExtractPage() {
                 </ul>
               </CollapsibleSection>
 
-              <CollapsibleSection title="Recommendations" badge={`${result.analysis.recommendations.length}`}>
-                <ul className="space-y-2">
-                  {result.analysis.recommendations.map((r, i) => (
-                    <li key={i} className="text-sm p-3 rounded-lg bg-surface-alt">{r}</li>
-                  ))}
-                </ul>
-              </CollapsibleSection>
-
               {result.analysis.schemaTypes.length > 0 && (
-                <CollapsibleSection title="Schema Markup Detected" badge={`${result.analysis.schemaTypes.length} types`}>
+                <CollapsibleSection title="Schema Markup" badge={`${result.analysis.schemaTypes.length} types`} defaultOpen={false}>
                   <div className="flex flex-wrap gap-2">
                     {result.analysis.schemaTypes.map((t, i) => (
                       <span key={i} className="text-sm px-3 py-1 rounded-full bg-success/10 text-success">{t}</span>
@@ -293,7 +305,7 @@ export function WebsiteExtractPage() {
                 </CollapsibleSection>
               )}
 
-              <CollapsibleSection title="Schema Completeness" badge={`${result.extract.schemaCompleteness.score}%`} defaultOpen={false}>
+              <CollapsibleSection title="Schema Completeness" badge={`${result.extract.schemaCompleteness.score}%`} defaultOpen={false} priority="low">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <div className="flex-1 h-2 bg-surface-alt rounded-full overflow-hidden">
@@ -317,7 +329,7 @@ export function WebsiteExtractPage() {
                 </div>
               </CollapsibleSection>
 
-              <CollapsibleSection title="Content Depth" defaultOpen={false}>
+              <CollapsibleSection title="Content Depth" defaultOpen={false} priority="low">
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="p-2 rounded bg-surface-alt">
                     <p className="text-text-muted text-xs">Word Count</p>
@@ -325,109 +337,98 @@ export function WebsiteExtractPage() {
                   </div>
                   <div className="p-2 rounded bg-surface-alt">
                     <p className="text-text-muted text-xs">Headings</p>
-                    <p className="font-medium">{result.extract.contentDepth.headingCount} {result.extract.contentDepth.headingHierarchyValid ? '(valid hierarchy)' : '(hierarchy issues)'}</p>
+                    <p className="font-medium">{result.extract.contentDepth.headingCount} {result.extract.contentDepth.headingHierarchyValid ? '(valid)' : '(issues)'}</p>
                   </div>
                   <div className="p-2 rounded bg-surface-alt">
                     <p className="text-text-muted text-xs">Internal Links</p>
                     <p className="font-medium">{result.extract.contentDepth.internalLinkCount}</p>
                   </div>
                   <div className="p-2 rounded bg-surface-alt">
-                    <p className="text-text-muted text-xs">Image Alt Coverage</p>
+                    <p className="text-text-muted text-xs">Alt Coverage</p>
                     <p className="font-medium">{result.extract.contentDepth.imagesWithAlt}/{result.extract.contentDepth.imageCount} ({result.extract.contentDepth.altTextCoverage}%)</p>
                   </div>
                 </div>
               </CollapsibleSection>
+            </div>
+          </div>
 
-              {result.extract.socialProfiles.length > 0 && (
-                <CollapsibleSection title="Social Profiles Detected" badge={`${result.extract.socialProfiles.length}`} defaultOpen={false}>
-                  <ul className="space-y-1">
-                    {result.extract.socialProfiles.map((url, i) => (
-                      <li key={i} className="text-sm text-primary truncate">{url}</li>
-                    ))}
-                  </ul>
-                </CollapsibleSection>
-              )}
-
-              {result.analysis.detectedLocations.length > 0 && (
-                <CollapsibleSection title="Detected Locations" badge={`${result.analysis.detectedLocations.length}`}>
-                  <ul className="space-y-1">
-                    {result.analysis.detectedLocations.map((l, i) => (
-                      <li key={i} className="text-sm">{l}</li>
-                    ))}
-                  </ul>
-                </CollapsibleSection>
-              )}
-
-              <CollapsibleSection title="Estimated GEO Signals" badge="Auto-scored" defaultOpen={false}>
-                <p className="text-xs text-text-muted mb-3">
-                  These scores are auto-estimated from your website scan. They will pre-fill the snapshot form.
-                  Green = high confidence, yellow = medium, gray = needs manual verification.
-                </p>
-                <div className="space-y-2">
-                  {SIGNAL_DEFINITIONS.map((signal) => {
-                    const est = result.estimatedSignals[signal.key]
-                    return (
-                      <div key={signal.key} className="flex items-center gap-2 py-1.5 border-b border-border/50 last:border-0">
-                        {confidenceIcon(est.confidence)}
-                        <span className="text-sm font-medium w-40 shrink-0">{signal.label}</span>
-                        <div className="flex gap-0.5">
-                          {[1, 2, 3, 4, 5].map(n => (
-                            <div key={n} className={cn(
-                              'w-5 h-5 rounded text-xs flex items-center justify-center font-medium',
-                              n <= est.score ? 'bg-primary/20 text-primary' : 'bg-surface-alt text-text-muted/30',
-                            )}>{n}</div>
-                          ))}
-                        </div>
-                        <span className="text-xs text-text-muted ml-2 truncate">{est.reason}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </CollapsibleSection>
-
-              {/* What's Next? */}
-              <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-5 space-y-4">
-                <h3 className="font-semibold text-text flex items-center gap-2">
-                  <ArrowRight size={18} className="text-primary" />
-                  What's Next?
-                </h3>
-                <div className="space-y-2">
-                  <div className="flex items-start gap-3">
-                    <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</span>
-                    <p className="text-sm text-text">Your scan results will <strong>auto-fill the entire Client Snapshot</strong> — categories, signals, focus tier, and more.</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</span>
-                    <p className="text-sm text-text"><strong>Review and adjust</strong> any auto-estimated values, then run the <strong>full GEO diagnostic</strong>.</p>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</span>
-                    <p className="text-sm text-text">The diagnostic will generate <strong>ready-to-publish content</strong> to improve your AI visibility.</p>
-                  </div>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2 pt-1">
-                  <button
-                    onClick={() => navigate('/monthly')}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors"
-                  >
-                    <Calendar size={16} />
-                    Continue to Monthly Cycle
-                    <ArrowRight size={14} />
-                  </button>
-                  <button
-                    onClick={() => navigate('/generate-tests')}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border text-text text-sm font-medium hover:bg-surface-alt transition-colors"
-                  >
-                    <FlaskConical size={16} />
-                    Generate AI Tests First
-                  </button>
-                </div>
-                <p className="text-xs text-text-muted">Your scan results will auto-fill the snapshot form — just review and run.</p>
-              </div>
-            </>
+          {/* Low priority / reference sections */}
+          {result.extract.socialProfiles.length > 0 && (
+            <CollapsibleSection title="Social Profiles" badge={`${result.extract.socialProfiles.length}`} defaultOpen={false} priority="low">
+              <ul className="space-y-1">
+                {result.extract.socialProfiles.map((url, i) => (
+                  <li key={i} className="text-sm text-primary truncate">{url}</li>
+                ))}
+              </ul>
+            </CollapsibleSection>
           )}
+
+          {result.analysis.detectedLocations.length > 0 && (
+            <CollapsibleSection title="Detected Locations" badge={`${result.analysis.detectedLocations.length}`} defaultOpen={false}>
+              <ul className="space-y-1">
+                {result.analysis.detectedLocations.map((l, i) => (
+                  <li key={i} className="text-sm">{l}</li>
+                ))}
+              </ul>
+            </CollapsibleSection>
+          )}
+
+          <CollapsibleSection title="Estimated GEO Signals" badge="Auto-scored" defaultOpen={false}>
+            <p className="text-xs text-text-muted mb-3">
+              Auto-estimated from your scan. These will pre-fill the snapshot form.
+              Green = high confidence, yellow = medium, gray = needs manual check.
+            </p>
+            <div className="space-y-2">
+              {SIGNAL_DEFINITIONS.map((signal) => {
+                const est = result.estimatedSignals[signal.key]
+                return (
+                  <div key={signal.key} className="flex items-center gap-2 py-1.5 border-b border-border/50 last:border-0">
+                    {confidenceIcon(est.confidence)}
+                    <span className="text-sm font-medium w-40 shrink-0">{signal.label}</span>
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map(n => (
+                        <div key={n} className={cn(
+                          'w-5 h-5 rounded text-xs flex items-center justify-center font-medium',
+                          n <= est.score ? 'bg-primary/20 text-primary' : 'bg-surface-alt text-text-muted/30',
+                        )}>{n}</div>
+                      ))}
+                    </div>
+                    <span className="text-xs text-text-muted ml-2 truncate">{est.reason}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </CollapsibleSection>
+
+          {/* What's Next */}
+          <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-5 space-y-4">
+            <h3 className="font-semibold text-text flex items-center gap-2">
+              <ArrowRight size={18} className="text-primary" />
+              What's Next?
+            </h3>
+            <p className="text-sm text-text">
+              Your scan results will <strong>auto-fill the Client Snapshot</strong>. Review the values, then run the full diagnostic.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2 pt-1">
+              <button
+                onClick={() => navigate('/workflows/monthly')}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors"
+              >
+                <Calendar size={16} />
+                Continue to Monthly Cycle
+                <ArrowRight size={14} />
+              </button>
+              <button
+                onClick={() => navigate('/setup/tests')}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border text-text text-sm font-medium hover:bg-surface-alt transition-colors"
+              >
+                <FlaskConical size={16} />
+                Generate AI Tests First
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
