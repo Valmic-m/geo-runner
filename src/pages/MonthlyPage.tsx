@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { SignalBar } from '@/components/shared/SignalBar'
 import { ScoreGauge } from '@/components/shared/ScoreGauge'
+import { SignalRadarChart } from '@/components/shared/SignalRadarChart'
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection'
 import { ArtifactCard } from '@/components/shared/ArtifactCard'
 import { CopyButton } from '@/components/shared/CopyButton'
@@ -17,7 +18,7 @@ import type { MonthlyChangeLog } from '@/types/changelog'
 import { cn } from '@/lib/cn'
 
 export function MonthlyPage() {
-  const { extractedData, clearExtractedData } = useExtractedData()
+  const { extractedData, clearExtractedData, setLastSnapshot, markWorkflowCompleted, lastSnapshot } = useExtractedData()
   const [changelog, setChangelog] = useState<MonthlyChangeLog | null>(null)
 
   const { result, error, isRunning, run } = useWorkflow<MonthlyInput, MonthlyOutput>(runMonthlyWorkflow)
@@ -25,13 +26,20 @@ export function MonthlyPage() {
   const handleRun = (snapshot: ClientGeoSnapshot) => {
     clearExtractedData()
     run({ snapshot, changelog: changelog ?? undefined })
+    setLastSnapshot(snapshot)
+    markWorkflowCompleted('monthly')
   }
+
+  const allArtifactsText = result
+    ? result.artifacts.map((a) => `=== ${a.title} ===\n\n${a.content}`).join('\n\n---\n\n')
+    : ''
 
   const exportContent = result
     ? [
         `# Monthly GEO Report - ${result.snapshot.businessName}`,
         '',
         `## Recommendation Readiness: ${result.readinessScore}% (${result.readinessLabel})`,
+        result.industryVertical && result.industryVertical !== 'General / Default' ? `Industry weighting: ${result.industryVertical}` : '',
         '',
         '## Signal Diagnostics',
         ...result.diagnostics.map((d) => `- **${d.label}**: ${d.score}/5 (${d.status}) - ${d.recommendation}`),
@@ -62,7 +70,7 @@ export function MonthlyPage() {
         <div className="space-y-6">
           <div>
             <h3 className="text-sm font-semibold text-text mb-3">Client GEO Snapshot</h3>
-            <SnapshotForm key={extractedData ? 'prefilled' : 'empty'} onSubmit={handleRun} isRunning={isRunning} initialData={extractedData ?? undefined} />
+            <SnapshotForm key={extractedData ? 'prefilled' : 'empty'} onSubmit={handleRun} isRunning={isRunning} initialData={extractedData ?? undefined} previousSignals={lastSnapshot?.signals} />
           </div>
 
           <div>
@@ -97,6 +105,14 @@ export function MonthlyPage() {
                 label="Recommendation Readiness"
                 subtitle={result.readinessLabel}
               />
+              {result.industryVertical && result.industryVertical !== 'General / Default' && (
+                <p className="text-xs text-text-muted text-center -mt-2">Scored with <span className="font-medium text-text">{result.industryVertical}</span> industry weights</p>
+              )}
+
+              <div className="border border-border rounded-xl p-4 bg-surface">
+                <h4 className="text-xs font-semibold text-text-muted mb-2 text-center">Signal Overview</h4>
+                <SignalRadarChart signals={result.snapshot.signals} />
+              </div>
 
               <CollapsibleSection title="Signal Diagnostics" badge={`${result.diagnostics.filter((d) => d.status === 'critical' || d.status === 'weak').length} issues`}>
                 <div className="space-y-2">
@@ -129,6 +145,9 @@ export function MonthlyPage() {
               </CollapsibleSection>
 
               <CollapsibleSection title="GEO Artifacts" badge={`${result.artifacts.length}`} defaultOpen={false}>
+                <div className="flex justify-end mb-2">
+                  <CopyButton text={allArtifactsText} label="Copy All Artifacts" />
+                </div>
                 <div className="space-y-3">
                   {result.artifacts.map((a, i) => (
                     <ArtifactCard key={i} artifact={a} />

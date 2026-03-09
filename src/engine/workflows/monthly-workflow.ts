@@ -13,6 +13,7 @@ import { generateArtifacts } from '@/engine/generators/artifact-generator'
 import { createDeploymentPlan } from '@/engine/generators/deployment-planner'
 import { ensureExternalDistribution } from '@/engine/modules/signal-distribution-planner'
 import { formatSnapshot } from '@/engine/generators/snapshot-updater'
+import { getVerticalLabel } from '@/engine/constants/industry-weights'
 
 export interface MonthlyInput {
   snapshotText?: string
@@ -28,6 +29,7 @@ export interface MonthlyOutput {
   diagnostics: SignalDiagnostic[]
   readinessScore: number
   readinessLabel: string
+  industryVertical: string
   recommendations: Recommendation[]
   artifacts: Artifact[]
   distributionActions: DistributionAction[]
@@ -59,8 +61,9 @@ export function runMonthlyWorkflow(input: MonthlyInput): MonthlyOutput {
 
   // Analyze
   const diagnostics = analyzeSignals(snapshot.signals)
-  const readinessScore = calculateReadinessScore(snapshot.signals)
+  const readinessScore = calculateReadinessScore(snapshot.signals, snapshot.primaryCategory)
   const readinessLabel = getReadinessLabel(readinessScore)
+  const industryVertical = getVerticalLabel(snapshot.primaryCategory)
 
   // Generate recommendations
   const recommendations = generateRecommendations(snapshot, changelog)
@@ -85,6 +88,7 @@ export function runMonthlyWorkflow(input: MonthlyInput): MonthlyOutput {
     diagnostics,
     readinessScore,
     readinessLabel,
+    industryVertical,
     recommendations,
     artifacts,
     distributionActions,

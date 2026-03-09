@@ -42,7 +42,7 @@ export function runAnnualWorkflow(input: AnnualInput): AnnualOutput {
   }
 
   const diagnostics = analyzeSignals(snapshot.signals)
-  const readinessScore = calculateReadinessScore(snapshot.signals)
+  const readinessScore = calculateReadinessScore(snapshot.signals, snapshot.primaryCategory)
   const readinessLabel = getReadinessLabel(readinessScore)
 
   const categoryPrecision = analyzeCategoryPrecision(snapshot)

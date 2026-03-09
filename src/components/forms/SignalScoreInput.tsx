@@ -10,6 +10,7 @@ interface SignalScoreInputProps {
   onChange: (value: number) => void
   confidence?: SignalConfidence
   reason?: string
+  previousValue?: number
 }
 
 const SCORE_LABELS: Record<number, string> = {
@@ -23,17 +24,24 @@ const SCORE_LABELS: Record<number, string> = {
 function ConfidenceIcon({ confidence }: { confidence: SignalConfidence }) {
   switch (confidence) {
     case 'high':
-      return <CheckCircle2 size={14} className="text-success shrink-0" title="High confidence estimate" />
+      return <span title="High confidence estimate"><CheckCircle2 size={14} className="text-success shrink-0" /></span>
     case 'medium':
-      return <AlertCircle size={14} className="text-warning shrink-0" title="Medium confidence — review recommended" />
+      return <span title="Medium confidence — review recommended"><AlertCircle size={14} className="text-warning shrink-0" /></span>
     case 'low':
-      return <HelpCircle size={14} className="text-text-muted shrink-0" title="Low confidence — please verify" />
+      return <span title="Low confidence — please verify"><HelpCircle size={14} className="text-text-muted shrink-0" /></span>
     case 'unknown':
-      return <HelpCircle size={14} className="text-text-muted/50 shrink-0" title="Could not estimate — please score manually" />
+      return <span title="Could not estimate — please score manually"><HelpCircle size={14} className="text-text-muted/50 shrink-0" /></span>
   }
 }
 
-export function SignalScoreInput({ label, description, value, onChange, confidence, reason }: SignalScoreInputProps) {
+function TrendIndicator({ current, previous }: { current: number; previous: number }) {
+  if (current === previous || current === 0 || previous === 0) return null
+  const delta = current - previous
+  if (delta > 0) return <span className="text-xs text-success font-medium">+{delta}</span>
+  return <span className="text-xs text-danger font-medium">{delta}</span>
+}
+
+export function SignalScoreInput({ label, description, value, onChange, confidence, reason, previousValue }: SignalScoreInputProps) {
   return (
     <div className="py-2">
       <div className="flex items-center gap-3">
@@ -66,8 +74,11 @@ export function SignalScoreInput({ label, description, value, onChange, confiden
             </button>
           ))}
         </div>
-        <span className="text-xs text-text-muted w-20 text-right">
+        <span className="text-xs text-text-muted w-20 text-right flex items-center justify-end gap-1">
           {value > 0 ? SCORE_LABELS[value] : '—'}
+          {previousValue !== undefined && previousValue > 0 && value > 0 && (
+            <TrendIndicator current={value} previous={previousValue} />
+          )}
         </span>
       </div>
       {reason && (

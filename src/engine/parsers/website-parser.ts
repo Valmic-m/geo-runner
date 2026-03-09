@@ -26,6 +26,30 @@ export interface WebsiteExtract {
   hasComparisonContent: boolean
   detectedCompetitors: string[]
   businessNameCandidates: string[]
+  // Enhanced analysis fields
+  schemaCompleteness: SchemaCompleteness
+  contentDepth: ContentDepthMetrics
+  socialProfiles: string[]
+}
+
+export interface SchemaCompleteness {
+  score: number // 0-100
+  hasOrganization: boolean
+  hasLocalBusiness: boolean
+  hasFaqPage: boolean
+  hasService: boolean
+  hasReview: boolean
+  missingFields: string[]
+}
+
+export interface ContentDepthMetrics {
+  totalWordCount: number
+  headingCount: number
+  headingHierarchyValid: boolean
+  internalLinkCount: number
+  imageCount: number
+  imagesWithAlt: number
+  altTextCoverage: number // 0-100
 }
 
 const TRUST_SIGNAL_KEYWORDS = [
@@ -227,6 +251,93 @@ function extractCompetitors(plainText: string): string[] {
   return [...new Set(competitors)].slice(0, 5)
 }
 
+function analyzeSchemaCompleteness(rawHtml: string): SchemaCompleteness {
+  const missingFields: string[] = []
+  let score = 0
+  const hasOrganization = /["']Organization["']/.test(rawHtml)
+  const hasLocalBusiness = /["']LocalBusiness["']|["']Restaurant["']|["']Store["']|["']MedicalBusiness["']|["']LegalService["']/.test(rawHtml)
+  const hasFaqPage = /["']FAQPage["']/.test(rawHtml)
+  const hasService = /["']Service["']|["']Product["']/.test(rawHtml)
+  const hasReview = /["']Review["']|["']AggregateRating["']/.test(rawHtml)
+
+  if (hasOrganization) score += 25
+  else missingFields.push('Organization schema')
+  if (hasLocalBusiness) score += 20
+  else missingFields.push('LocalBusiness schema')
+  if (hasFaqPage) score += 20
+  else missingFields.push('FAQPage schema')
+  if (hasService) score += 15
+  else missingFields.push('Service/Product schema')
+  if (hasReview) score += 10
+  else missingFields.push('Review/AggregateRating schema')
+
+  // Check for key Organization fields
+  if (hasOrganization) {
+    if (!/"contactPoint"/.test(rawHtml)) { missingFields.push('contactPoint in Organization'); score -= 3 }
+    if (!/"areaServed"/.test(rawHtml)) { missingFields.push('areaServed in Organization'); score -= 2 }
+    if (!/"sameAs"/.test(rawHtml)) { missingFields.push('sameAs (social links) in Organization'); score -= 2 }
+  }
+
+  // Add points for sameAs (social profiles linked in schema)
+  if (/"sameAs"/.test(rawHtml)) score += 10
+
+  return { score: Math.max(0, Math.min(100, score)), hasOrganization, hasLocalBusiness, hasFaqPage, hasService, hasReview, missingFields }
+}
+
+function analyzeContentDepth(rawHtml: string, plainText: string): ContentDepthMetrics {
+  const words = plainText.split(/\s+/).filter(Boolean)
+  const totalWordCount = words.length
+
+  // Count headings
+  const h1s = (rawHtml.match(/<h1[\s>]/gi) || []).length
+  const h2s = (rawHtml.match(/<h2[\s>]/gi) || []).length
+  const h3s = (rawHtml.match(/<h3[\s>]/gi) || []).length
+  const headingCount = h1s + h2s + h3s
+
+  // Valid hierarchy: has h1, h2s exist, h3s only if h2s exist
+  const headingHierarchyValid = h1s >= 1 && h1s <= 2 && (h3s === 0 || h2s > 0)
+
+  // Internal links (href starting with / or same domain, excluding anchors and external)
+  const allLinks = rawHtml.match(/<a[^>]*href=["'][^"']*["']/gi) || []
+  const internalLinks = allLinks.filter((link) => {
+    const href = link.match(/href=["']([^"']*)/)?.[1] || ''
+    return href.startsWith('/') && !href.startsWith('//') && !href.startsWith('/#')
+  })
+  const internalLinkCount = internalLinks.length
+
+  // Images
+  const allImages = rawHtml.match(/<img[^>]*>/gi) || []
+  const imageCount = allImages.length
+  const imagesWithAlt = allImages.filter((img) => /alt=["'][^"']+["']/.test(img)).length
+  const altTextCoverage = imageCount > 0 ? Math.round((imagesWithAlt / imageCount) * 100) : 100
+
+  return { totalWordCount, headingCount, headingHierarchyValid, internalLinkCount, imageCount, imagesWithAlt, altTextCoverage }
+}
+
+function extractSocialProfiles(rawHtml: string): string[] {
+  const profiles: string[] = []
+
+  // Extract from sameAs in schema
+  const sameAsMatch = rawHtml.match(/"sameAs"\s*:\s*\[([\s\S]*?)\]/i)
+  if (sameAsMatch) {
+    const urls = sameAsMatch[1].match(/"(https?:\/\/[^"]+)"/g) || []
+    profiles.push(...urls.map((u) => u.replace(/"/g, '')))
+  }
+
+  // Extract social links from HTML
+  const socialDomains = ['linkedin.com', 'facebook.com', 'twitter.com', 'x.com', 'instagram.com', 'youtube.com', 'tiktok.com', 'github.com']
+  const linkRegex = /href=["'](https?:\/\/[^"']+)["']/gi
+  let match
+  while ((match = linkRegex.exec(rawHtml)) !== null) {
+    const url = match[1]
+    if (socialDomains.some((d) => url.includes(d)) && !profiles.includes(url)) {
+      profiles.push(url)
+    }
+  }
+
+  return [...new Set(profiles)]
+}
+
 export function parseWebsiteContent(rawText: string, rawHtml?: string): ParseResult<WebsiteExtract> {
   if (!rawText.trim()) {
     return { success: false, errors: ['Website content is required'] }
@@ -339,6 +450,11 @@ export function parseWebsiteContent(rawText: string, rawHtml?: string): ParseRes
   const hasAwards = presentSignals.some(s => ['award', 'recognized'].includes(s))
   const hasPartnerships = presentSignals.some(s => ['partnership', 'member of', 'affiliated'].includes(s))
 
+  // Enhanced analysis
+  const schemaCompleteness = analyzeSchemaCompleteness(html)
+  const contentDepth = analyzeContentDepth(html, rawText)
+  const socialProfiles = extractSocialProfiles(html)
+
   return {
     success: true,
     data: {
@@ -365,6 +481,9 @@ export function parseWebsiteContent(rawText: string, rawHtml?: string): ParseRes
       hasComparisonContent,
       detectedCompetitors,
       businessNameCandidates,
+      schemaCompleteness,
+      contentDepth,
+      socialProfiles,
     },
     errors: [],
   }

@@ -7,18 +7,20 @@ import { useWorkflow } from '@/hooks/useWorkflow'
 import { runGenerateTestsWorkflow } from '@/engine/workflows/generate-tests-workflow'
 import type { GenerateTestsInput, GenerateTestsOutput } from '@/engine/workflows/generate-tests-workflow'
 import { useExtractedData } from '@/context/ExtractedDataContext'
+import { PLATFORM_CONFIGS } from '@/engine/constants/platform-config'
 import type { ClientGeoSnapshot, PlatformKey } from '@/types/snapshot'
 
 export function GenerateTestsPage() {
-  const { extractedData, clearExtractedData } = useExtractedData()
+  const { extractedData, clearExtractedData, markWorkflowCompleted } = useExtractedData()
   const { result, error, isRunning, run } = useWorkflow<GenerateTestsInput, GenerateTestsOutput>(runGenerateTestsWorkflow)
 
   const handleRun = (snapshot: ClientGeoSnapshot) => {
     clearExtractedData()
     run({ snapshot })
+    markWorkflowCompleted('generate-tests')
   }
 
-  const platforms: PlatformKey[] = ['chatgpt', 'claude', 'gemini']
+  const platforms: PlatformKey[] = ['chatgpt', 'claude', 'gemini', 'perplexity', 'aiOverviews']
 
   const allPromptsText = result
     ? [
@@ -26,8 +28,9 @@ export function GenerateTestsPage() {
         '',
         ...platforms.flatMap((p) => {
           const prompts = result.testPrompts.filter((t) => t.platform === p)
+          const label = PLATFORM_CONFIGS.find((c) => c.key === p)?.label ?? p
           return [
-            `## ${p.charAt(0).toUpperCase() + p.slice(1)}`,
+            `## ${label}`,
             ...prompts.map((t) => `- [${t.category}] ${t.prompt}`),
             '',
           ]
@@ -41,7 +44,7 @@ export function GenerateTestsPage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-text">Generate AI Visibility Tests</h2>
-        <p className="text-sm text-text-muted mt-1">Produce test prompts to check your client's visibility on ChatGPT, Claude, and Gemini.</p>
+        <p className="text-sm text-text-muted mt-1">Produce test prompts to check your client's visibility on ChatGPT, Claude, Gemini, Perplexity, and AI Overviews.</p>
         <p className="text-xs text-text-muted mt-1">Use the generated prompts to test each AI platform and see if the client is mentioned, recommended, or absent. Run before your first monthly cycle (baseline) and monthly thereafter.</p>
       </div>
 
@@ -74,7 +77,7 @@ export function GenerateTestsPage() {
                 const categories = [...new Set(prompts.map((p) => p.category))]
 
                 return (
-                  <CollapsibleSection key={platform} title={platform.charAt(0).toUpperCase() + platform.slice(1)} badge={`${prompts.length} prompts`}>
+                  <CollapsibleSection key={platform} title={PLATFORM_CONFIGS.find((c) => c.key === platform)?.label ?? platform} badge={`${prompts.length} prompts`}>
                     {categories.map((cat) => (
                       <div key={cat} className="mb-3">
                         <p className="text-xs font-medium text-text-muted mb-1">{cat} Queries</p>

@@ -33,6 +33,8 @@ AI Visibility
 ChatGPT inclusion %: ${snapshot.platformVisibility.chatgpt}
 Gemini inclusion %: ${snapshot.platformVisibility.gemini}
 Claude inclusion %: ${snapshot.platformVisibility.claude}
+Perplexity inclusion %: ${snapshot.platformVisibility.perplexity}
+AI Overviews inclusion %: ${snapshot.platformVisibility.aiOverviews}
 
 Competitor dominance %: ${snapshot.competitorDominance}
 

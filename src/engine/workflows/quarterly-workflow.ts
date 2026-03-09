@@ -73,7 +73,7 @@ export function runQuarterlyWorkflow(input: QuarterlyInput): QuarterlyOutput {
   }
 
   const diagnostics = analyzeSignals(snapshot.signals)
-  const readinessScore = calculateReadinessScore(snapshot.signals)
+  const readinessScore = calculateReadinessScore(snapshot.signals, snapshot.primaryCategory)
   const readinessLabel = getReadinessLabel(readinessScore)
 
   const authorityAnalysis = analyzeAuthority(authority, snapshot.primaryCategory)
