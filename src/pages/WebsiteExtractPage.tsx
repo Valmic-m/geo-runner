@@ -12,6 +12,7 @@ import type { WebsiteExtractInput, WebsiteExtractOutput } from '@/engine/workflo
 import { useSession } from '@/context/SessionContext'
 import { fetchUrlContent } from '@/lib/fetch-url'
 import { cn } from '@/lib/cn'
+import { PageHeader } from '@/components/shared/PageHeader'
 
 export function WebsiteExtractPage() {
   const navigate = useNavigate()
@@ -101,10 +102,7 @@ export function WebsiteExtractPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-text">Website Content Extract</h2>
-        <p className="text-sm text-text-muted mt-1">Scan a website to auto-detect categories, audience, and missing trust signals.</p>
-      </div>
+      <PageHeader title="Website Content Extract" subtitle="Scan a website to auto-detect categories, audience, and missing trust signals." />
 
       {/* Input section — full-width centered when no results */}
       {!result && (
@@ -122,9 +120,10 @@ export function WebsiteExtractPage() {
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://example.com"
                   className={cn(
-                    'w-full rounded-lg border border-border bg-surface pl-9 pr-3 py-2 text-sm',
-                    'focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary',
-                    'placeholder:text-text-muted/50',
+                    'w-full rounded-lg border border-border bg-surface pl-9 pr-3 py-2 text-sm shadow-sm',
+                    'hover:border-primary/30',
+                    'focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:shadow-md focus:shadow-primary/5',
+                    'placeholder:text-text-muted/50 transition-all duration-200',
                   )}
                 />
               </div>
@@ -137,8 +136,8 @@ export function WebsiteExtractPage() {
             className={cn(
               'w-full flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors',
               url.trim() && !isLoading
-                ? 'bg-primary text-white hover:bg-primary-dark'
-                : 'bg-border text-text-muted cursor-not-allowed',
+                ? 'bg-gradient-to-r from-primary to-primary-dark text-white shadow-md shadow-primary/25 hover:shadow-lg active:scale-[0.98]'
+                : 'bg-border text-text-muted cursor-not-allowed opacity-60',
             )}
           >
             {isLoading ? (
@@ -412,7 +411,7 @@ export function WebsiteExtractPage() {
             <div className="flex flex-col sm:flex-row gap-2 pt-1">
               <button
                 onClick={() => navigate('/workflows/monthly')}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-dark transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-medium shadow-md shadow-primary/25 hover:shadow-lg active:scale-[0.98] transition-all duration-200"
               >
                 <Calendar size={16} />
                 Continue to Monthly Cycle

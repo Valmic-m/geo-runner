@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useSession } from '@/context/SessionContext'
 import type { CompletedWorkflow } from '@/context/SessionContext'
+import { PageHeader } from '@/components/shared/PageHeader'
 
 const workflows: { to: string; icon: typeof Calendar; title: string; frequency: string; workflow: CompletedWorkflow }[] = [
   { to: '/workflows/monthly', icon: Calendar, title: 'Monthly Cycle', frequency: 'Every month', workflow: 'monthly' },
@@ -21,9 +22,11 @@ export function HomePage() {
 
   return (
     <div className="space-y-8">
+      <PageHeader title="Dashboard" subtitle="Manage clients, run workflows, and track AI visibility progress." />
+
       {/* Client Context */}
       {currentSnapshot && (
-        <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-surface">
+        <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-surface shadow-sm">
           <div>
             <p className="text-xs text-text-muted uppercase tracking-wide">Current Client</p>
             <p className="text-lg font-bold text-text mt-0.5">{currentSnapshot.businessName}</p>
@@ -48,10 +51,10 @@ export function HomePage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Link
           to="/setup/extract"
-          className="group p-6 rounded-xl border-2 border-border bg-surface hover:border-primary/30 hover:shadow-sm transition-all"
+          className="group p-6 rounded-xl border-2 border-border bg-surface hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
         >
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center shadow-md shadow-primary/25">
               <Globe size={20} />
             </div>
             <div>
@@ -69,10 +72,10 @@ export function HomePage() {
 
         <Link
           to="/workflows/monthly"
-          className="group p-6 rounded-xl border-2 border-border bg-surface hover:border-primary/30 hover:shadow-sm transition-all"
+          className="group p-6 rounded-xl border-2 border-border bg-surface hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
         >
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center shadow-md shadow-primary/25">
               <Calendar size={20} />
             </div>
             <div>
@@ -93,24 +96,24 @@ export function HomePage() {
 
       {/* How it works - compact */}
       <div>
-        <h3 className="text-sm font-semibold text-text mb-3">How GEO Runner Works</h3>
+        <h3 className="text-xs font-semibold text-text-muted mb-3 tracking-wide uppercase">How GEO Runner Works</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="flex gap-3 p-3 rounded-lg border border-border bg-surface">
-            <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0">1</div>
+          <div className="flex gap-3 p-3 rounded-lg border border-border bg-surface shadow-sm">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">1</div>
             <div>
               <p className="text-sm font-medium text-text">Scan & Score</p>
               <p className="text-xs text-text-muted">Analyze 12 AI visibility signals from your client's web presence</p>
             </div>
           </div>
-          <div className="flex gap-3 p-3 rounded-lg border border-border bg-surface">
-            <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0">2</div>
+          <div className="flex gap-3 p-3 rounded-lg border border-border bg-surface shadow-sm">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">2</div>
             <div>
               <p className="text-sm font-medium text-text">Generate Artifacts</p>
               <p className="text-xs text-text-muted">Get ready-to-publish content: FAQs, schema, entity blocks, and more</p>
             </div>
           </div>
-          <div className="flex gap-3 p-3 rounded-lg border border-border bg-surface">
-            <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0">3</div>
+          <div className="flex gap-3 p-3 rounded-lg border border-border bg-surface shadow-sm">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">3</div>
             <div>
               <p className="text-sm font-medium text-text">Deploy & Track</p>
               <p className="text-xs text-text-muted">Follow the deployment plan, then re-test visibility after 4-6 weeks</p>
@@ -121,7 +124,7 @@ export function HomePage() {
 
       {/* Workflow Progress */}
       <div>
-        <h3 className="text-sm font-semibold text-text mb-3">Recurring Workflows</h3>
+        <h3 className="text-xs font-semibold text-text-muted mb-3 tracking-wide uppercase">Recurring Workflows</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {workflows.map((w) => {
             const isCompleted = completedWorkflows.includes(w.workflow)
@@ -129,7 +132,7 @@ export function HomePage() {
               <Link
                 key={w.to}
                 to={w.to}
-                className="flex items-center gap-3 p-4 rounded-xl border border-border bg-surface hover:border-primary/30 hover:shadow-sm transition-all"
+                className="flex items-center gap-3 p-4 rounded-xl border border-border bg-surface shadow-sm hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
               >
                 <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
                   <w.icon size={18} />

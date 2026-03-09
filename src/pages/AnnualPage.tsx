@@ -13,6 +13,7 @@ import type { AnnualInput, AnnualOutput } from '@/engine/workflows/annual-workfl
 import { useSession } from '@/context/SessionContext'
 import type { ClientGeoSnapshot } from '@/types/snapshot'
 import { cn } from '@/lib/cn'
+import { PageHeader } from '@/components/shared/PageHeader'
 
 export function AnnualPage() {
   const { extractedData, clearExtractedData, currentSnapshot, setCurrentSnapshot, markWorkflowCompleted } = useSession()
@@ -63,10 +64,7 @@ export function AnnualPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-text">Annual GEO Reset</h2>
-        <p className="text-sm text-text-muted mt-1">Full category precision review, entity definition, and positioning improvements.</p>
-      </div>
+      <PageHeader title="Annual GEO Reset" subtitle="Full category precision review, entity definition, and positioning improvements." />
 
       {!result ? (
         <div className="max-w-2xl mx-auto space-y-6">
@@ -90,7 +88,7 @@ export function AnnualPage() {
                 disabled={isRunning}
                 className={cn(
                   'w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors',
-                  !isRunning ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-border text-text-muted cursor-not-allowed',
+                  !isRunning ? 'bg-gradient-to-r from-primary to-primary-dark text-white shadow-md shadow-primary/25 hover:shadow-lg active:scale-[0.98]' : 'bg-border text-text-muted cursor-not-allowed opacity-60',
                 )}
               >
                 {isRunning ? 'Running...' : 'Run Annual Reset'}

@@ -58,14 +58,19 @@ export function TabNav() {
               end={group.to === '/'}
               className={() =>
                 cn(
-                  'flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap',
+                  'flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-all duration-200 whitespace-nowrap',
                   isActive
                     ? 'border-primary text-primary'
-                    : 'border-transparent text-text-muted hover:text-text hover:border-border',
+                    : 'border-transparent text-text-muted hover:text-text hover:bg-surface-alt/50 rounded-t-lg',
                 )
               }
             >
-              <group.icon size={16} />
+              <span className={cn(
+                'p-1 rounded-md transition-colors duration-200',
+                isActive && 'bg-primary/10',
+              )}>
+                <group.icon size={16} />
+              </span>
               {group.label}
             </NavLink>
           )
@@ -73,7 +78,7 @@ export function TabNav() {
       </nav>
 
       {activeGroup?.children && (
-        <div className="border-t border-border bg-surface pt-3">
+        <div className="border-t border-border/50 bg-surface pt-3">
           <SubNav items={activeGroup.children} />
         </div>
       )}

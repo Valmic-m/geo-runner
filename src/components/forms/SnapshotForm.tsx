@@ -181,9 +181,10 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot
   }
 
   const inputClass = cn(
-    'w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm',
-    'focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary',
-    'placeholder:text-text-muted/50',
+    'w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm shadow-sm',
+    'hover:border-primary/30',
+    'focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:shadow-md focus:shadow-primary/5',
+    'placeholder:text-text-muted/50 transition-all duration-200',
   )
 
   const selectClass = cn(inputClass, 'appearance-none bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23999%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E")] bg-[length:12px] bg-[right_12px_center] bg-no-repeat pr-8')
@@ -410,7 +411,7 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot
           <button
             type="button"
             onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
-            className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-white hover:bg-primary-dark transition-colors"
+            className="flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-primary to-primary-dark text-white shadow-md shadow-primary/25 hover:shadow-lg active:scale-[0.98] transition-all duration-200"
           >
             Next <ChevronRight size={16} />
           </button>
@@ -422,8 +423,8 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot
             className={cn(
               'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
               canSubmit && !isRunning
-                ? 'bg-primary text-white hover:bg-primary-dark'
-                : 'bg-border text-text-muted cursor-not-allowed',
+                ? 'bg-gradient-to-r from-primary to-primary-dark text-white shadow-md shadow-primary/25 hover:shadow-lg active:scale-[0.98]'
+                : 'bg-border text-text-muted cursor-not-allowed opacity-60',
             )}
           >
             {isRunning ? 'Running...' : (submitLabel || 'Run Analysis')}

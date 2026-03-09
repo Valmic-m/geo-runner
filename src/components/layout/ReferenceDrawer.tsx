@@ -45,9 +45,9 @@ export function ReferenceDrawer({ onClose }: ReferenceDrawerProps) {
     <div
       ref={backdropRef}
       onClick={handleBackdropClick}
-      className="fixed inset-0 z-50 bg-black/40"
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
     >
-      <div className="absolute right-0 top-0 h-full w-full max-w-lg bg-surface border-l border-border shadow-xl overflow-y-auto">
+      <div className="absolute right-0 top-0 h-full w-full max-w-lg bg-surface border-l border-border shadow-2xl overflow-y-auto animate-slide-in-right">
         <div className="sticky top-0 bg-surface border-b border-border px-5 py-4 flex items-center justify-between z-10">
           <h2 className="font-semibold text-text">GEO Reference Guide</h2>
           <button

@@ -37,10 +37,10 @@ export function AssessmentQuestion({ question, value, onChange, templateVars }: 
               type="button"
               onClick={() => onChange(option.value)}
               className={cn(
-                'px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors',
+                'px-3 py-1.5 rounded-lg text-sm font-medium border transition-all duration-150',
                 isSelected
-                  ? 'bg-primary text-white border-primary'
-                  : 'bg-surface border-border text-text-muted hover:border-primary/40 hover:text-text',
+                  ? 'bg-gradient-to-r from-primary to-primary-dark text-white border-primary shadow-sm shadow-primary/20 scale-[1.02]'
+                  : 'bg-surface border-border text-text-muted hover:border-primary/40 hover:text-text hover:shadow-sm hover:scale-[1.01] active:scale-[0.99]',
               )}
             >
               {option.label}

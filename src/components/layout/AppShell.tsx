@@ -11,16 +11,16 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-surface-alt">
-      <header className="bg-surface border-b border-border">
+      <header className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 shadow-sm border-b border-border/50">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-bold text-text">GEO Runner</h1>
+            <h1 className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-violet-500 bg-clip-text text-transparent">GEO Runner</h1>
             <p className="text-xs text-text-muted">Generative Engine Optimization Workflow Tool</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setReferenceOpen(true)}
-              className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text px-3 py-1 rounded-full border border-border hover:border-primary/30 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text px-3 py-1 rounded-full border border-border hover:border-primary/30 active:scale-[0.97] transition-all duration-200"
               title="GEO Reference Guide"
             >
               <BookOpen size={13} />
@@ -29,12 +29,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             {hasSession && (
               <button
                 onClick={clearSession}
-                className="text-xs text-text-muted hover:text-danger px-3 py-1 rounded-full border border-border hover:border-danger/30 transition-colors"
+                className="text-xs text-text-muted hover:text-danger px-3 py-1 rounded-full border border-border hover:border-danger/30 active:scale-[0.97] transition-all duration-200"
               >
                 Clear Session
               </button>
             )}
-            <div className="text-xs text-text-muted bg-surface-alt px-3 py-1 rounded-full border border-border">
+            <div className="text-xs text-text-muted bg-surface-alt px-3 py-1 rounded-full border border-border shadow-sm ring-1 ring-border/50">
               {currentSnapshot
                 ? currentSnapshot.businessName
                 : hasSession
@@ -45,10 +45,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
         <TabNav />
       </header>
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto px-4 py-6 animate-fade-in-up">
         {children}
       </main>
-      <footer className="border-t border-border bg-surface mt-8">
+      <footer className="border-t border-border/50 bg-white/60 backdrop-blur-sm mt-8">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <p className="text-xs text-text-muted text-center">
             AI outputs must be reviewed before publishing. Avoid unverifiable claims. Regulated industries require caution.

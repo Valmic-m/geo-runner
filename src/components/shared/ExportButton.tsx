@@ -17,7 +17,7 @@ export function ExportButton({ content, filename, label = 'Export .md', classNam
       onClick={() => exportAsMarkdown(content, filename)}
       className={cn(
         'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium',
-        'border border-border bg-surface hover:bg-surface-alt transition-colors',
+        'border border-border bg-surface shadow-sm hover:shadow-md active:scale-[0.97] transition-all duration-150',
         className,
       )}
     >
