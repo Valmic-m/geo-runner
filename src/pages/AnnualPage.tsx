@@ -100,7 +100,7 @@ export function AnnualPage() {
             <>
               <div>
                 <h3 className="text-sm font-semibold text-text mb-3">Client GEO Snapshot</h3>
-                <SnapshotForm onSubmit={handleRun} isRunning={isRunning} initialData={extractedData ?? undefined} />
+                <SnapshotForm onSubmit={handleRun} isRunning={isRunning} initialData={extractedData ?? undefined} cycle="annual" />
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-text">

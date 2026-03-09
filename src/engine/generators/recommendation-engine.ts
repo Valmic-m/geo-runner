@@ -68,11 +68,16 @@ export function generateRecommendations(
 function getActionDescription(key: SignalKey, score: number, snapshot: ClientGeoSnapshot): string {
   const name = snapshot.businessName || 'the business'
   const category = snapshot.primaryCategory || 'the category'
+  const compNames = snapshot.competitors.length > 0
+    ? snapshot.competitors.map((c) => c.name).join(', ')
+    : 'alternatives'
 
   const descriptions: Record<string, string> = {
     entityClarity: `Create a clear entity definition block for ${name} as a ${category} provider. Deploy across homepage, about page, and external profiles.`,
     brandMentions: `Increase brand mentions for ${name} through guest articles, directory listings, and partner mentions.`,
-    comparisonPresence: `Create comparison content positioning ${name} against alternatives in the ${category} space.`,
+    comparisonPresence: snapshot.competitors.length > 0
+      ? `Create comparison pages: ${snapshot.competitors.slice(0, 3).map((c) => `${name} vs ${c.name}`).join(', ')}. Position ${name} against ${compNames} in the ${category} space.`
+      : `Create comparison content positioning ${name} against alternatives in the ${category} space.`,
     faqCoverage: `Build comprehensive FAQ content covering common ${category} queries that AI models use to answer questions.`,
     structuredData: `Implement Organization, Service, and FAQ schema markup for ${name}.`,
     reviews: `Launch a review acquisition campaign targeting Google, industry platforms, and relevant review sites.`,

@@ -93,7 +93,7 @@ export function QuarterlyPage() {
             <>
               <div>
                 <h3 className="text-sm font-semibold text-text mb-3">Client GEO Snapshot</h3>
-                <SnapshotForm onSubmit={handleRun} isRunning={isRunning} initialData={extractedData ?? undefined} />
+                <SnapshotForm onSubmit={handleRun} isRunning={isRunning} initialData={extractedData ?? undefined} cycle="quarterly" />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-text mb-3">Authority Snapshot <span className="text-text-muted font-normal">(optional)</span></h3>

@@ -22,16 +22,16 @@ export const FIELD_HELP: Record<string, string> = {
   messagingConsistency: 'Is your brand messaging consistent across your website, social media, directories, and profiles? Score 1 if messaging varies widely, 5 if consistent everywhere.',
   credibilitySignals: 'Do you have trust indicators like certifications, awards, or endorsements? Score 1 if none, 5 if multiple certifications, awards, and endorsements are displayed.',
 
-  // AI Visibility
-  chatgptInclusion: 'Ask ChatGPT 10 relevant questions about your service category and area. Count how many responses mention your business. That percentage is your approximate inclusion rate.',
-  geminiInclusion: 'Ask Google Gemini 10 relevant questions about your service category and area. Count how many responses mention your business. That percentage is your approximate inclusion rate.',
-  claudeInclusion: 'Ask Claude 10 relevant questions about your service category and area. Count how many responses mention your business. That percentage is your approximate inclusion rate.',
-  perplexityInclusion: 'Ask Perplexity 10 relevant questions about your service category and area. Count how many responses mention or cite your business. That percentage is your approximate inclusion rate.',
-  aiOverviewsInclusion: 'Search Google for 10 relevant questions about your service category. Count how many AI Overview results mention your business. That percentage is your approximate inclusion rate.',
-  competitorDominance: 'Of the AI responses that mention businesses in your category, what percentage mention competitors instead of you? High dominance means competitors are getting recommended more.',
+  // AI Visibility — now guided by assessment questions
+  chatgptInclusion: 'Your ChatGPT visibility is computed from the guided assessment questions. Test by searching for your business and category on ChatGPT.',
+  geminiInclusion: 'Your Gemini visibility is computed from the guided assessment questions. Test by searching for your business and category on Gemini.',
+  claudeInclusion: 'Your Claude visibility is computed from the guided assessment questions. Test by searching for your business and category on Claude.',
+  perplexityInclusion: 'Your Perplexity visibility is computed from the guided assessment questions. Test by searching for your business and category on Perplexity.',
+  aiOverviewsInclusion: 'Your AI Overviews visibility is computed from the guided assessment questions. Search Google for relevant queries and check if AI Overviews mention your business.',
+  competitorDominance: 'Computed from your answers about competitor presence in AI responses. Higher means competitors dominate more.',
 
   // Focus
   focusTier: 'Tier 1 (Foundation): New to GEO, needs basics like entity definitions and schema. Tier 2 (Growth): Basics done, building authority and citations. Tier 3 (Optimization): Strong presence, fine-tuning for maximum visibility.',
   primaryBottleneck: 'The single biggest issue holding back AI visibility right now.',
-  competitors: 'List your main competitors that appear in AI responses for your category.',
+  competitors: 'Add competitor website URLs. We will extract their name and category automatically and integrate them into your analysis, recommendations, and comparison content.',
 }

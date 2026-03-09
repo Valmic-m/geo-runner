@@ -11,7 +11,7 @@ Geo scope: ${snapshot.geoScope}
 Revenue model: ${snapshot.revenueModel}
 Regulated: ${snapshot.regulated}
 
-Competitors: ${snapshot.competitors.join(', ')}
+Competitors: ${snapshot.competitors.map((c) => c.url ? `${c.name} (${c.url})` : c.name).join(', ')}
 
 Scores (1-5)
 

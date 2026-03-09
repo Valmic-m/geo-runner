@@ -4,6 +4,7 @@ import type { WebsiteExtract } from '@/engine/parsers/website-parser'
 import { analyzeWebsite } from '@/engine/analyzers/website-analyzer'
 import { estimateSignals, estimateFocusTier, estimateBottleneck } from '@/engine/analyzers/signal-estimator'
 import type { EstimatedSignals } from '@/engine/analyzers/signal-estimator'
+import type { Competitor } from '@/types/snapshot'
 
 export interface WebsiteExtractInput {
   websiteContent: string
@@ -19,7 +20,7 @@ export interface WebsiteExtractOutput {
   geoScope: string
   revenueModel: string
   regulated: string
-  competitors: string[]
+  competitors: Competitor[]
   businessNameCandidates: string[]
 }
 
@@ -41,7 +42,7 @@ export function runWebsiteExtractWorkflow(input: WebsiteExtractInput): WebsiteEx
     geoScope: extract.hasLocalFocus ? 'Local' : '',
     revenueModel: extract.revenueModelIndicator,
     regulated: extract.regulatedIndustryIndicator,
-    competitors: extract.detectedCompetitors,
+    competitors: extract.detectedCompetitors.map((name) => ({ url: '', name })),
     businessNameCandidates: extract.businessNameCandidates,
   }
 }

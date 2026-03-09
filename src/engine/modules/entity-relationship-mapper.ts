@@ -54,10 +54,10 @@ export function mapEntityRelationships(snapshot: ClientGeoSnapshot): EntityGraph
 
   // Competitor nodes
   for (const comp of snapshot.competitors) {
-    nodes.push({ name: comp, type: 'company' })
+    nodes.push({ name: comp.name, type: 'company' })
     edges.push({
       from: snapshot.businessName,
-      to: comp,
+      to: comp.name,
       relationship: 'competes with',
     })
   }
@@ -105,7 +105,7 @@ function generateEntityMapSummary(
   if (snapshot.secondaryCategory) lines.push(`Secondary: ${snapshot.secondaryCategory}`)
   if (snapshot.geoScope) lines.push(`Locations: ${snapshot.geoScope}`)
   if (snapshot.audience) lines.push(`Serves: ${snapshot.audience}`)
-  if (snapshot.competitors.length > 0) lines.push(`Competes with: ${snapshot.competitors.join(', ')}`)
+  if (snapshot.competitors.length > 0) lines.push(`Competes with: ${snapshot.competitors.map((c) => c.name).join(', ')}`)
 
   lines.push('', `Total entities: ${nodes.length}`, `Total relationships: ${edges.length}`)
 

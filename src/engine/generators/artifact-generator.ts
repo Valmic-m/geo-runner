@@ -23,6 +23,7 @@ export function generateArtifacts(
       snapshot.businessName || '[Business Name]',
       snapshot.primaryCategory || '[Category]',
       snapshot.audience || '[Audience]',
+      snapshot.competitors,
     )
 
     // Add vertical-specific prompt additions

@@ -24,7 +24,7 @@ ${secondary ? `- Secondary category: ${secondary}\n` : ''}- Target audience: ${a
 - Revenue model: ${snapshot.revenueModel || 'Not specified'}
 ${snapshot.regulated ? `- Regulatory context: ${snapshot.regulated}\n` : ''}
 Competitive context:
-${snapshot.competitors.length > 0 ? snapshot.competitors.map((c) => `- Competes with: ${c}`).join('\n') : '- No competitors specified'}
+${snapshot.competitors.length > 0 ? snapshot.competitors.map((c) => `- Competes with: ${c.name}`).join('\n') : '- No competitors specified'}
 
 Deployment instructions:
 1. Use the entity definition paragraph as the opening text on the About page
