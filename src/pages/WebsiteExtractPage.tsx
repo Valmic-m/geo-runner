@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Play, Globe, ChevronDown, ChevronUp, Loader2, ArrowRight, FlaskConical, Calendar } from 'lucide-react'
+import { Play, Globe, ChevronDown, ChevronUp, Loader2, ArrowRight, FlaskConical, Calendar, CheckCircle2, HelpCircle, AlertCircle } from 'lucide-react'
+import type { SignalConfidence } from '@/engine/analyzers/signal-estimator'
+import { SIGNAL_DEFINITIONS } from '@/engine/constants/signal-definitions'
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection'
 import { CopyButton } from '@/components/shared/CopyButton'
 import { ExportButton } from '@/components/shared/ExportButton'
@@ -31,6 +33,14 @@ export function WebsiteExtractPage() {
         audience: result.analysis.audience.join(', '),
         recommendations: result.analysis.recommendations,
         missingTrustSignals: result.analysis.missingTrustSignals,
+        geoScope: result.geoScope,
+        revenueModel: result.revenueModel,
+        regulated: result.regulated,
+        competitors: result.competitors,
+        businessNameCandidates: result.businessNameCandidates,
+        estimatedSignals: result.estimatedSignals,
+        estimatedFocusTier: result.estimatedFocusTier,
+        estimatedBottleneck: result.estimatedBottleneck,
       })
     }
   }, [result, setExtractedData])
@@ -39,12 +49,12 @@ export function WebsiteExtractPage() {
     setFetchError(null)
     setIsFetching(true)
     try {
-      const content = await fetchUrlContent(url)
-      if (!content.trim()) {
+      const fetched = await fetchUrlContent(url)
+      if (!fetched.plainText.trim()) {
         throw new Error('No content could be extracted from this URL')
       }
       setIsFetching(false)
-      run({ websiteContent: content })
+      run({ websiteContent: fetched.plainText, rawHtml: fetched.rawHtml })
     } catch (err) {
       setIsFetching(false)
       setFetchError(err instanceof Error ? err.message : 'Failed to fetch URL')
@@ -53,6 +63,15 @@ export function WebsiteExtractPage() {
 
   const handleManualAnalyze = () => {
     run({ websiteContent: manualContent })
+  }
+
+  const confidenceIcon = (confidence: SignalConfidence) => {
+    switch (confidence) {
+      case 'high': return <CheckCircle2 size={12} className="text-success shrink-0" />
+      case 'medium': return <AlertCircle size={12} className="text-warning shrink-0" />
+      case 'low': return <HelpCircle size={12} className="text-text-muted shrink-0" />
+      case 'unknown': return <HelpCircle size={12} className="text-text-muted/50 shrink-0" />
+    }
   }
 
   const isLoading = isFetching || isRunning
@@ -263,6 +282,53 @@ export function WebsiteExtractPage() {
                 </ul>
               </CollapsibleSection>
 
+              {result.analysis.schemaTypes.length > 0 && (
+                <CollapsibleSection title="Schema Markup Detected" badge={`${result.analysis.schemaTypes.length} types`}>
+                  <div className="flex flex-wrap gap-2">
+                    {result.analysis.schemaTypes.map((t, i) => (
+                      <span key={i} className="text-sm px-3 py-1 rounded-full bg-success/10 text-success">{t}</span>
+                    ))}
+                  </div>
+                </CollapsibleSection>
+              )}
+
+              {result.analysis.detectedLocations.length > 0 && (
+                <CollapsibleSection title="Detected Locations" badge={`${result.analysis.detectedLocations.length}`}>
+                  <ul className="space-y-1">
+                    {result.analysis.detectedLocations.map((l, i) => (
+                      <li key={i} className="text-sm">{l}</li>
+                    ))}
+                  </ul>
+                </CollapsibleSection>
+              )}
+
+              <CollapsibleSection title="Estimated GEO Signals" badge="Auto-scored" defaultOpen={false}>
+                <p className="text-xs text-text-muted mb-3">
+                  These scores are auto-estimated from your website scan. They will pre-fill the snapshot form.
+                  Green = high confidence, yellow = medium, gray = needs manual verification.
+                </p>
+                <div className="space-y-2">
+                  {SIGNAL_DEFINITIONS.map((signal) => {
+                    const est = result.estimatedSignals[signal.key]
+                    return (
+                      <div key={signal.key} className="flex items-center gap-2 py-1.5 border-b border-border/50 last:border-0">
+                        {confidenceIcon(est.confidence)}
+                        <span className="text-sm font-medium w-40 shrink-0">{signal.label}</span>
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map(n => (
+                            <div key={n} className={cn(
+                              'w-5 h-5 rounded text-xs flex items-center justify-center font-medium',
+                              n <= est.score ? 'bg-primary/20 text-primary' : 'bg-surface-alt text-text-muted/30',
+                            )}>{n}</div>
+                          ))}
+                        </div>
+                        <span className="text-xs text-text-muted ml-2 truncate">{est.reason}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </CollapsibleSection>
+
               {/* What's Next? */}
               <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-5 space-y-4">
                 <h3 className="font-semibold text-text flex items-center gap-2">
@@ -272,11 +338,11 @@ export function WebsiteExtractPage() {
                 <div className="space-y-2">
                   <div className="flex items-start gap-3">
                     <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</span>
-                    <p className="text-sm text-text">The categories and audience detected above will <strong>pre-fill your Client Snapshot</strong> on the next page.</p>
+                    <p className="text-sm text-text">Your scan results will <strong>auto-fill the entire Client Snapshot</strong> — categories, signals, focus tier, and more.</p>
                   </div>
                   <div className="flex items-start gap-3">
                     <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</span>
-                    <p className="text-sm text-text">Complete the remaining snapshot fields (signal scores, AI visibility) and run a <strong>full GEO diagnostic</strong>.</p>
+                    <p className="text-sm text-text"><strong>Review and adjust</strong> any auto-estimated values, then run the <strong>full GEO diagnostic</strong>.</p>
                   </div>
                   <div className="flex items-start gap-3">
                     <span className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</span>
@@ -300,7 +366,7 @@ export function WebsiteExtractPage() {
                     Generate AI Tests First
                   </button>
                 </div>
-                <p className="text-xs text-text-muted">Your extracted data will pre-fill the snapshot form on the next page.</p>
+                <p className="text-xs text-text-muted">Your scan results will auto-fill the snapshot form — just review and run.</p>
               </div>
             </>
           )}

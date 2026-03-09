@@ -1,4 +1,9 @@
-export async function fetchUrlContent(url: string): Promise<string> {
+export interface FetchedContent {
+  rawHtml: string
+  plainText: string
+}
+
+export async function fetchUrlContent(url: string): Promise<FetchedContent> {
   const response = await fetch(`/api/fetch-url?url=${encodeURIComponent(url)}`)
 
   if (!response.ok) {
@@ -6,8 +11,11 @@ export async function fetchUrlContent(url: string): Promise<string> {
     throw new Error(error.error || `Failed to fetch URL: ${response.status}`)
   }
 
-  const html = await response.text()
-  return stripHtmlToText(html)
+  const rawHtml = await response.text()
+  return {
+    rawHtml,
+    plainText: stripHtmlToText(rawHtml),
+  }
 }
 
 function stripHtmlToText(html: string): string {

@@ -1,17 +1,27 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import type { ClientGeoSnapshot, SignalScores } from '@/types/snapshot'
+import type { ClientGeoSnapshot, SignalScores, SignalKey } from '@/types/snapshot'
 import { SIGNAL_DEFINITIONS } from '@/engine/constants/signal-definitions'
 import { FIELD_HELP } from '@/engine/constants/field-help'
 import { FormField } from '@/components/forms/FormField'
 import { StepIndicator } from '@/components/forms/StepIndicator'
 import { SignalScoreInput } from '@/components/forms/SignalScoreInput'
+import { CategorySelect } from '@/components/forms/CategorySelect'
 import { cn } from '@/lib/cn'
+import type { EstimatedSignals } from '@/engine/analyzers/signal-estimator'
 
 export interface SnapshotInitialData {
   primaryCategory?: string
   secondaryCategory?: string
   audience?: string
+  geoScope?: string
+  revenueModel?: string
+  regulated?: string
+  competitors?: string[]
+  businessNameCandidates?: string[]
+  estimatedSignals?: EstimatedSignals
+  estimatedFocusTier?: string
+  estimatedBottleneck?: string
 }
 
 interface SnapshotFormProps {
@@ -36,40 +46,40 @@ const BOTTLENECK_OPTIONS = [
   'Other',
 ]
 
-const EMPTY_SIGNALS: SignalScores = {
-  entityClarity: 0,
-  brandMentions: 0,
-  comparisonPresence: 0,
-  faqCoverage: 0,
-  structuredData: 0,
-  reviews: 0,
-  authoritySignals: 0,
-  citations: 0,
-  gbpCompleteness: 0,
-  knowledgeGraphSignals: 0,
-  messagingConsistency: 0,
-  credibilitySignals: 0,
+function buildInitialSignals(estimated?: EstimatedSignals): SignalScores {
+  if (!estimated) {
+    return {
+      entityClarity: 0, brandMentions: 0, comparisonPresence: 0, faqCoverage: 0,
+      structuredData: 0, reviews: 0, authoritySignals: 0, citations: 0,
+      gbpCompleteness: 0, knowledgeGraphSignals: 0, messagingConsistency: 0, credibilitySignals: 0,
+    }
+  }
+  const scores = {} as SignalScores
+  for (const key of Object.keys(estimated) as SignalKey[]) {
+    scores[key] = estimated[key].score
+  }
+  return scores
 }
 
 export function SnapshotForm({ onSubmit, isRunning, initialData }: SnapshotFormProps) {
-  const hasPrefilledData = !!(initialData?.primaryCategory || initialData?.secondaryCategory || initialData?.audience)
+  const hasPrefilledData = !!initialData?.estimatedSignals || !!(initialData?.primaryCategory || initialData?.secondaryCategory || initialData?.audience)
   const [step, setStep] = useState(0)
   const [form, setForm] = useState({
-    businessName: '',
+    businessName: initialData?.businessNameCandidates?.[0] || '',
     primaryCategory: initialData?.primaryCategory || '',
     secondaryCategory: initialData?.secondaryCategory || '',
     audience: initialData?.audience || '',
-    geoScope: '',
-    revenueModel: '',
-    regulated: '',
-    competitors: '',
-    signals: { ...EMPTY_SIGNALS },
+    geoScope: initialData?.geoScope || '',
+    revenueModel: initialData?.revenueModel || '',
+    regulated: initialData?.regulated || '',
+    competitors: initialData?.competitors?.join(', ') || '',
+    signals: buildInitialSignals(initialData?.estimatedSignals),
     chatgpt: 0,
     gemini: 0,
     claude: 0,
     competitorDominance: 0,
-    focusTier: '',
-    primaryBottleneck: '',
+    focusTier: initialData?.estimatedFocusTier || '',
+    primaryBottleneck: initialData?.estimatedBottleneck || '',
     notes: '',
   })
 
@@ -123,7 +133,7 @@ export function SnapshotForm({ onSubmit, isRunning, initialData }: SnapshotFormP
         {hasPrefilledData && step === 0 && (
           <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm text-text">
             <span className="text-primary shrink-0 mt-0.5">&#x2713;</span>
-            Some fields were pre-filled from your website scan. Review and adjust as needed.
+            Fields were auto-filled from your website scan. Review and adjust as needed.
           </div>
         )}
 
@@ -140,22 +150,18 @@ export function SnapshotForm({ onSubmit, isRunning, initialData }: SnapshotFormP
             </FormField>
 
             <FormField label="Primary Category" helpText={FIELD_HELP.primaryCategory} required>
-              <input
-                type="text"
+              <CategorySelect
                 value={form.primaryCategory}
-                onChange={(e) => updateField('primaryCategory', e.target.value)}
-                placeholder="e.g., Personal Injury Attorney, Italian Restaurant"
-                className={inputClass}
+                onChange={(v) => updateField('primaryCategory', v)}
+                placeholder="Search or select a category..."
               />
             </FormField>
 
             <FormField label="Secondary Category" helpText={FIELD_HELP.secondaryCategory}>
-              <input
-                type="text"
+              <CategorySelect
                 value={form.secondaryCategory}
-                onChange={(e) => updateField('secondaryCategory', e.target.value)}
-                placeholder="e.g., Workers' Compensation Attorney"
-                className={inputClass}
+                onChange={(v) => updateField('secondaryCategory', v)}
+                placeholder="Optional — search or select..."
               />
             </FormField>
 
@@ -208,9 +214,17 @@ export function SnapshotForm({ onSubmit, isRunning, initialData }: SnapshotFormP
 
         {step === 1 && (
           <>
-            <p className="text-xs text-text-muted">
-              Rate each signal from 1 (not present) to 5 (strong). Hover the info icon for guidance on how to assess each one.
-            </p>
+            {hasPrefilledData && initialData?.estimatedSignals ? (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm text-text">
+                <span className="text-primary shrink-0 mt-0.5">&#x2713;</span>
+                Signals were auto-estimated from your website scan. Review and adjust as needed.
+                Confidence: green = high, yellow = medium, gray = needs manual check.
+              </div>
+            ) : (
+              <p className="text-xs text-text-muted">
+                Rate each signal from 1 (not present) to 5 (strong). Hover the info icon for guidance on how to assess each one.
+              </p>
+            )}
             <div className="divide-y divide-border">
               {SIGNAL_DEFINITIONS.map((signal) => (
                 <SignalScoreInput
@@ -219,6 +233,8 @@ export function SnapshotForm({ onSubmit, isRunning, initialData }: SnapshotFormP
                   description={FIELD_HELP[signal.key] || signal.description}
                   value={form.signals[signal.key]}
                   onChange={(v) => updateSignal(signal.key, v)}
+                  confidence={initialData?.estimatedSignals?.[signal.key]?.confidence}
+                  reason={initialData?.estimatedSignals?.[signal.key]?.reason}
                 />
               ))}
             </div>
@@ -307,6 +323,13 @@ export function SnapshotForm({ onSubmit, isRunning, initialData }: SnapshotFormP
 
         {step === 3 && (
           <>
+            {hasPrefilledData && (initialData?.estimatedFocusTier || initialData?.estimatedBottleneck) && (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm text-text">
+                <span className="text-primary shrink-0 mt-0.5">&#x2713;</span>
+                Focus tier and bottleneck were auto-detected from your signal estimates.
+              </div>
+            )}
+
             <FormField label="Focus Tier" helpText={FIELD_HELP.focusTier}>
               <select
                 value={form.focusTier}
