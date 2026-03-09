@@ -16,6 +16,10 @@ import type { ClientGeoSnapshot } from '@/types/snapshot'
 import type { AuthoritySnapshot } from '@/types/authority'
 import { cn } from '@/lib/cn'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { JourneyBreadcrumb } from '@/components/shared/JourneyBreadcrumb'
+import { QUARTERLY_JOURNEY } from '@/lib/journey-definitions'
+import { buildQuarterlyReport } from '@/engine/generators/report-builder'
+import { renderReportHtml } from '@/engine/generators/report-html-template'
 
 export function QuarterlyPage() {
   const { extractedData, clearExtractedData, currentSnapshot, setCurrentSnapshot, markWorkflowCompleted } = useSession()
@@ -63,8 +67,18 @@ export function QuarterlyPage() {
       ].join('\n')
     : ''
 
+  const reportHtml = result
+    ? renderReportHtml(buildQuarterlyReport({
+        snapshot: result.snapshot,
+        diagnostics: result.diagnostics,
+        readinessScore: result.readinessScore,
+        readinessLabel: result.readinessLabel,
+      }))
+    : ''
+
   return (
     <div className="space-y-6">
+      <JourneyBreadcrumb journey={QUARTERLY_JOURNEY} activeStepIndex={0} hasResults={!!result} />
       <PageHeader title="Quarterly Authority Review" subtitle="Deep authority analysis, entity mapping, citation opportunities, and content expansion." />
 
       {!result ? (
@@ -113,7 +127,7 @@ export function QuarterlyPage() {
               <h3 className="font-semibold text-text">Results: {result.snapshot.businessName}</h3>
               <div className="flex gap-2">
                 <CopyButton text={exportContent} label="Copy All" />
-                <ExportButton content={exportContent} filename={`geo-quarterly-${result.snapshot.businessName}`} />
+                <ExportButton content={exportContent} filename={`geo-quarterly-${result.snapshot.businessName}`} reportHtml={reportHtml} />
               </div>
             </div>
 

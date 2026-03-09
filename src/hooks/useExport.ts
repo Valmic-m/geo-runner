@@ -53,7 +53,20 @@ ${markdownToHtml(content)}
     downloadBlob(blob, filename.endsWith('.html') ? filename : `${filename}.html`)
   }, [])
 
-  return { exportAsMarkdown, exportAsJson, exportAsHtml }
+  const exportAsReport = useCallback((html: string, filename: string) => {
+    const blob = new Blob([html], { type: 'text/html' })
+    downloadBlob(blob, filename.endsWith('.html') ? filename : `${filename}.html`)
+  }, [])
+
+  const printReport = useCallback((html: string) => {
+    const win = window.open('', '_blank')
+    if (win) {
+      win.document.write(html)
+      win.document.close()
+    }
+  }, [])
+
+  return { exportAsMarkdown, exportAsJson, exportAsHtml, exportAsReport, printReport }
 }
 
 function markdownToHtml(md: string): string {

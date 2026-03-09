@@ -14,6 +14,10 @@ import { useSession } from '@/context/SessionContext'
 import type { ClientGeoSnapshot } from '@/types/snapshot'
 import { cn } from '@/lib/cn'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { JourneyBreadcrumb } from '@/components/shared/JourneyBreadcrumb'
+import { ANNUAL_JOURNEY } from '@/lib/journey-definitions'
+import { buildAnnualReport } from '@/engine/generators/report-builder'
+import { renderReportHtml } from '@/engine/generators/report-html-template'
 
 export function AnnualPage() {
   const { extractedData, clearExtractedData, currentSnapshot, setCurrentSnapshot, markWorkflowCompleted } = useSession()
@@ -62,8 +66,19 @@ export function AnnualPage() {
       ].join('\n')
     : ''
 
+  const reportHtml = result
+    ? renderReportHtml(buildAnnualReport({
+        snapshot: result.snapshot,
+        diagnostics: result.diagnostics,
+        readinessScore: result.readinessScore,
+        readinessLabel: result.readinessLabel,
+        entityDefinitionBlock: result.entityDefinitionBlock,
+      }))
+    : ''
+
   return (
     <div className="space-y-6">
+      <JourneyBreadcrumb journey={ANNUAL_JOURNEY} activeStepIndex={0} hasResults={!!result} />
       <PageHeader title="Annual GEO Reset" subtitle="Full category precision review, entity definition, and positioning improvements." />
 
       {!result ? (
@@ -128,7 +143,7 @@ export function AnnualPage() {
               <h3 className="font-semibold text-text">Results: {result.snapshot.businessName}</h3>
               <div className="flex gap-2">
                 <CopyButton text={exportContent} label="Copy All" />
-                <ExportButton content={exportContent} filename={`geo-annual-${result.snapshot.businessName}`} />
+                <ExportButton content={exportContent} filename={`geo-annual-${result.snapshot.businessName}`} reportHtml={reportHtml} />
               </div>
             </div>
 

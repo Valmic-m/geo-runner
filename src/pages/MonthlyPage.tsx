@@ -19,9 +19,13 @@ import type { ClientGeoSnapshot } from '@/types/snapshot'
 import type { MonthlyChangeLog } from '@/types/changelog'
 import { cn } from '@/lib/cn'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { JourneyBreadcrumb } from '@/components/shared/JourneyBreadcrumb'
+import { NEW_CLIENT_JOURNEY, RETURNING_CLIENT_JOURNEY } from '@/lib/journey-definitions'
+import { buildMonthlyReport } from '@/engine/generators/report-builder'
+import { renderReportHtml } from '@/engine/generators/report-html-template'
 
 export function MonthlyPage() {
-  const { extractedData, clearExtractedData, setCurrentSnapshot, currentSnapshot, lastSnapshot, markWorkflowCompleted } = useSession()
+  const { extractedData, clearExtractedData, setCurrentSnapshot, currentSnapshot, lastSnapshot, markWorkflowCompleted, completedWorkflows } = useSession()
   const [changelog, setChangelog] = useState<MonthlyChangeLog | null>(null)
   const [editingSnapshot, setEditingSnapshot] = useState(false)
 
@@ -68,8 +72,27 @@ export function MonthlyPage() {
       ].join('\n')
     : ''
 
+  const reportHtml = result
+    ? renderReportHtml(buildMonthlyReport({
+        snapshot: result.snapshot,
+        diagnostics: result.diagnostics,
+        readinessScore: result.readinessScore,
+        readinessLabel: result.readinessLabel,
+        recommendations: result.recommendations,
+        artifacts: result.artifacts,
+        distributionActions: result.distributionActions,
+        deploymentPlan: result.deploymentPlan,
+        sprintActions: result.sprintActions,
+      }))
+    : ''
+
   return (
     <div className="space-y-6">
+      <JourneyBreadcrumb
+        journey={completedWorkflows.includes('website-extract') ? NEW_CLIENT_JOURNEY : RETURNING_CLIENT_JOURNEY}
+        activeStepIndex={completedWorkflows.includes('website-extract') ? 2 : 0}
+        hasResults={!!result}
+      />
       <PageHeader title="Monthly GEO Cycle" subtitle="Run a full monthly diagnostic with signal analysis, recommendations, and artifact generation." />
 
       {!result ? (
@@ -120,7 +143,7 @@ export function MonthlyPage() {
               <h3 className="font-semibold text-text">Results: {result.snapshot.businessName}</h3>
               <div className="flex gap-2">
                 <CopyButton text={exportContent} label="Copy All" />
-                <ExportButton content={exportContent} filename={`geo-monthly-${result.snapshot.businessName}`} />
+                <ExportButton content={exportContent} filename={`geo-monthly-${result.snapshot.businessName}`} reportHtml={reportHtml} />
               </div>
             </div>
 

@@ -13,6 +13,7 @@ import { StepIndicator } from '@/components/forms/StepIndicator'
 import { CategorySelect } from '@/components/forms/CategorySelect'
 import { AssessmentSection } from '@/components/forms/AssessmentSection'
 import { CompetitorInput } from '@/components/forms/CompetitorInput'
+import { PlatformTestingGuide } from '@/components/forms/PlatformTestingGuide'
 import { cn } from '@/lib/cn'
 import type { EstimatedSignals } from '@/engine/analyzers/signal-estimator'
 
@@ -312,23 +313,32 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot
 
         {step === 2 && (
           <>
-            <p className="text-xs text-text-muted">
-              Test your visibility on each AI platform by answering the guided questions below. Your visibility percentage is computed from your answers.
-            </p>
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm text-text">
+              <span className="text-primary shrink-0 mt-0.5 text-base">&#x1F50D;</span>
+              <div>
+                <p className="font-medium">Manual testing required</p>
+                <p className="text-xs text-text-muted mt-0.5">
+                  For each platform below, open it in a new tab, try the suggested queries, and answer the questions based on what you observe.
+                  Expand "How to test" for each platform to see suggested queries.
+                </p>
+              </div>
+            </div>
             <div className="space-y-3">
               {platformGroups.map((group) => (
-                <AssessmentSection
-                  key={group.key}
-                  title={group.label}
-                  questions={group.questions}
-                  answers={answers}
-                  onAnswer={handleAnswer}
-                  templateVars={templateVars}
-                  cycle={cycle}
-                  computedScore={computedVisibility[group.key]}
-                  scoreMax={100}
-                  defaultOpen={false}
-                />
+                <div key={group.key}>
+                  <PlatformTestingGuide platformKey={group.key} templateVars={templateVars} />
+                  <AssessmentSection
+                    title={group.label}
+                    questions={group.questions}
+                    answers={answers}
+                    onAnswer={handleAnswer}
+                    templateVars={templateVars}
+                    cycle={cycle}
+                    computedScore={computedVisibility[group.key]}
+                    scoreMax={100}
+                    defaultOpen={false}
+                  />
+                </div>
               ))}
 
               {competitors.length > 0 && competitorQuestions.length > 0 && (
