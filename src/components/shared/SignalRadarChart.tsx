@@ -46,6 +46,24 @@ export function SignalRadarChart({ signals, previousSignals, size = 280 }: Signa
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="mx-auto">
+      <defs>
+        <linearGradient id="radarFill" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#2563eb" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.15" />
+        </linearGradient>
+        <linearGradient id="radarStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#2563eb" />
+          <stop offset="100%" stopColor="#8b5cf6" />
+        </linearGradient>
+        <filter id="radarGlow">
+          <feGaussianBlur stdDeviation="2" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
       {/* Grid rings */}
       {rings.map((level) => (
         <polygon
@@ -54,7 +72,8 @@ export function SignalRadarChart({ signals, previousSignals, size = 280 }: Signa
           fill="none"
           stroke="var(--color-border)"
           strokeWidth={level === 5 ? 1.5 : 0.5}
-          opacity={0.6}
+          strokeDasharray={level < 5 ? '3 3' : 'none'}
+          opacity={0.5}
         />
       ))}
 
@@ -62,7 +81,7 @@ export function SignalRadarChart({ signals, previousSignals, size = 280 }: Signa
       {signalKeys.map((_, i) => {
         const [x, y] = getPoint(i, 5)
         return (
-          <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="var(--color-border)" strokeWidth={0.5} opacity={0.4} />
+          <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="var(--color-border)" strokeWidth={0.5} opacity={0.3} />
         )
       })}
 
@@ -71,7 +90,7 @@ export function SignalRadarChart({ signals, previousSignals, size = 280 }: Signa
         <polygon
           points={getPolygonPoints(previousSignals)}
           fill="var(--color-warning)"
-          fillOpacity={0.1}
+          fillOpacity={0.08}
           stroke="var(--color-warning)"
           strokeWidth={1.5}
           strokeDasharray="4 3"
@@ -81,17 +100,23 @@ export function SignalRadarChart({ signals, previousSignals, size = 280 }: Signa
       {/* Current signals */}
       <polygon
         points={getPolygonPoints(signals)}
-        fill="var(--color-primary)"
-        fillOpacity={0.15}
-        stroke="var(--color-primary)"
+        fill="url(#radarFill)"
+        stroke="url(#radarStroke)"
         strokeWidth={2}
+        filter="url(#radarGlow)"
       />
 
       {/* Data points */}
       {signalKeys.map((key, i) => {
         const [x, y] = getPoint(i, signals[key])
         return (
-          <circle key={key} cx={x} cy={y} r={3} fill="var(--color-primary)" />
+          <circle
+            key={key}
+            cx={x} cy={y} r={4}
+            fill="var(--color-primary)"
+            stroke="white"
+            strokeWidth={2}
+          />
         )
       })}
 
@@ -108,7 +133,7 @@ export function SignalRadarChart({ signals, previousSignals, size = 280 }: Signa
             y={ly}
             textAnchor={textAnchor}
             dominantBaseline="central"
-            className="text-[9px] fill-text-muted"
+            className="text-[9px] fill-text-muted font-medium"
           >
             {SHORT_LABELS[key]}
           </text>

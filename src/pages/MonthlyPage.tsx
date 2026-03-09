@@ -18,6 +18,7 @@ import { useSession } from '@/context/SessionContext'
 import type { ClientGeoSnapshot } from '@/types/snapshot'
 import type { MonthlyChangeLog } from '@/types/changelog'
 import { cn } from '@/lib/cn'
+import { PageHeader } from '@/components/shared/PageHeader'
 
 export function MonthlyPage() {
   const { extractedData, clearExtractedData, setCurrentSnapshot, currentSnapshot, lastSnapshot, markWorkflowCompleted } = useSession()
@@ -69,10 +70,7 @@ export function MonthlyPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-text">Monthly GEO Cycle</h2>
-        <p className="text-sm text-text-muted mt-1">Run a full monthly diagnostic with signal analysis, recommendations, and artifact generation.</p>
-      </div>
+      <PageHeader title="Monthly GEO Cycle" subtitle="Run a full monthly diagnostic with signal analysis, recommendations, and artifact generation." />
 
       {!result ? (
         <div className="max-w-2xl mx-auto space-y-6">
@@ -88,7 +86,7 @@ export function MonthlyPage() {
                 disabled={isRunning}
                 className={cn(
                   'w-full px-4 py-3 rounded-lg text-sm font-medium transition-colors',
-                  !isRunning ? 'bg-primary text-white hover:bg-primary-dark' : 'bg-border text-text-muted cursor-not-allowed',
+                  !isRunning ? 'bg-gradient-to-r from-primary to-primary-dark text-white shadow-md shadow-primary/25 hover:shadow-lg active:scale-[0.98]' : 'bg-border text-text-muted cursor-not-allowed opacity-60',
                 )}
               >
                 {isRunning ? 'Running...' : 'Run Monthly Analysis'}

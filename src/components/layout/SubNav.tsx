@@ -26,16 +26,16 @@ export function SubNav({ items }: SubNavProps) {
             to={item.to}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-colors',
+                'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200',
                 isActive
-                  ? 'bg-primary text-white'
-                  : 'bg-surface-alt text-text-muted hover:text-text hover:bg-border',
+                  ? 'bg-gradient-to-r from-primary to-primary-dark text-white shadow-sm shadow-primary/25'
+                  : 'bg-surface-alt text-text-muted hover:text-text hover:bg-border hover:shadow-sm',
               )
             }
           >
             {item.label}
             {isCompleted && (
-              <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" title="Completed this session" />
+              <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shrink-0" title="Completed this session" />
             )}
           </NavLink>
         )

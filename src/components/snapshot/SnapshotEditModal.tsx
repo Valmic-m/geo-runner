@@ -37,14 +37,14 @@ export function SnapshotEditModal({ snapshot, onSave, onClose }: SnapshotEditMod
     <div
       ref={backdropRef}
       onClick={handleBackdropClick}
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 pt-[5vh] overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm p-4 pt-[5vh] overflow-y-auto"
     >
-      <div className="w-full max-w-2xl bg-surface rounded-xl border border-border shadow-xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+      <div className="w-full max-w-2xl bg-surface rounded-xl border border-border shadow-2xl ring-1 ring-white/10 animate-scale-in">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-gradient-to-b from-surface to-surface-alt rounded-t-xl">
           <h2 className="font-semibold text-text">Edit Client Snapshot</h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-surface-alt transition-colors"
+            className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-danger/10 transition-all duration-200"
           >
             <X size={18} />
           </button>
