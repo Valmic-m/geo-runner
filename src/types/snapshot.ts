@@ -19,6 +19,8 @@ export interface PlatformVisibility {
   chatgpt: number
   claude: number
   gemini: number
+  perplexity: number
+  aiOverviews: number
 }
 
 export type PlatformKey = keyof PlatformVisibility

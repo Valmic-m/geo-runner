@@ -28,6 +28,7 @@ interface SnapshotFormProps {
   onSubmit: (snapshot: ClientGeoSnapshot) => void
   isRunning?: boolean
   initialData?: SnapshotInitialData
+  previousSignals?: SignalScores
 }
 
 const STEPS = ['Business Info', 'GEO Signals', 'AI Visibility', 'Focus & Notes']
@@ -61,7 +62,7 @@ function buildInitialSignals(estimated?: EstimatedSignals): SignalScores {
   return scores
 }
 
-export function SnapshotForm({ onSubmit, isRunning, initialData }: SnapshotFormProps) {
+export function SnapshotForm({ onSubmit, isRunning, initialData, previousSignals }: SnapshotFormProps) {
   const hasPrefilledData = !!initialData?.estimatedSignals || !!(initialData?.primaryCategory || initialData?.secondaryCategory || initialData?.audience)
   const [step, setStep] = useState(0)
   const [form, setForm] = useState({
@@ -77,6 +78,8 @@ export function SnapshotForm({ onSubmit, isRunning, initialData }: SnapshotFormP
     chatgpt: 0,
     gemini: 0,
     claude: 0,
+    perplexity: 0,
+    aiOverviews: 0,
     competitorDominance: 0,
     focusTier: initialData?.estimatedFocusTier || '',
     primaryBottleneck: initialData?.estimatedBottleneck || '',
@@ -108,6 +111,8 @@ export function SnapshotForm({ onSubmit, isRunning, initialData }: SnapshotFormP
         chatgpt: form.chatgpt,
         gemini: form.gemini,
         claude: form.claude,
+        perplexity: form.perplexity,
+        aiOverviews: form.aiOverviews,
       },
       competitorDominance: form.competitorDominance,
       focusTier: form.focusTier,
@@ -235,6 +240,7 @@ export function SnapshotForm({ onSubmit, isRunning, initialData }: SnapshotFormP
                   onChange={(v) => updateSignal(signal.key, v)}
                   confidence={initialData?.estimatedSignals?.[signal.key]?.confidence}
                   reason={initialData?.estimatedSignals?.[signal.key]?.reason}
+                  previousValue={previousSignals?.[signal.key]}
                 />
               ))}
             </div>
@@ -286,6 +292,36 @@ export function SnapshotForm({ onSubmit, isRunning, initialData }: SnapshotFormP
                     max={100}
                     value={form.claude || ''}
                     onChange={(e) => updateField('claude', Number(e.target.value))}
+                    placeholder="0"
+                    className={cn(inputClass, 'w-24')}
+                  />
+                  <span className="text-sm text-text-muted">%</span>
+                </div>
+              </FormField>
+
+              <FormField label="Perplexity Inclusion %" helpText={FIELD_HELP.perplexityInclusion}>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={form.perplexity || ''}
+                    onChange={(e) => updateField('perplexity', Number(e.target.value))}
+                    placeholder="0"
+                    className={cn(inputClass, 'w-24')}
+                  />
+                  <span className="text-sm text-text-muted">%</span>
+                </div>
+              </FormField>
+
+              <FormField label="AI Overviews Inclusion %" helpText={FIELD_HELP.aiOverviewsInclusion}>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={form.aiOverviews || ''}
+                    onChange={(e) => updateField('aiOverviews', Number(e.target.value))}
                     placeholder="0"
                     className={cn(inputClass, 'w-24')}
                   />

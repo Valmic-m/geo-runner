@@ -54,6 +54,8 @@ export function parseSnapshot(rawText: string): ParseResult<ClientGeoSnapshot> {
     chatgpt: extractNumber(rawText, 'chatgpt inclusion', 'chatgpt'),
     gemini: extractNumber(rawText, 'gemini inclusion', 'gemini'),
     claude: extractNumber(rawText, 'claude inclusion', 'claude'),
+    perplexity: extractNumber(rawText, 'perplexity inclusion', 'perplexity'),
+    aiOverviews: extractNumber(rawText, 'ai overviews inclusion', 'ai overviews'),
   }
 
   const snapshot: ClientGeoSnapshot = {

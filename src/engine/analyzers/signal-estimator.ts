@@ -23,7 +23,7 @@ export function estimateSignals(extract: WebsiteExtract): EstimatedSignals {
     citations: estimateCitations(),
     gbpCompleteness: estimateGbpCompleteness(extract),
     knowledgeGraphSignals: estimateKnowledgeGraph(extract),
-    messagingConsistency: estimateMessagingConsistency(),
+    messagingConsistency: estimateMessagingConsistency(extract),
     credibilitySignals: estimateCredibilitySignals(extract),
   }
 }
@@ -99,15 +99,21 @@ function estimateStructuredData(extract: WebsiteExtract): EstimatedSignal {
   if (!extract.hasSchemaMarkup) {
     return { score: 1, confidence: 'high', reason: 'No JSON-LD schema markup found' }
   }
-  const count = extract.schemaTypes.length
+  // Use schema completeness score for a more nuanced assessment
+  const completeness = extract.schemaCompleteness.score
   let score = 2
-  if (count >= 2) score = 3
-  if (count >= 4) score = 4
-  if (count >= 6) score = 5
+  if (completeness >= 25) score = 3
+  if (completeness >= 50) score = 4
+  if (completeness >= 75) score = 5
+
+  const details = [`Schema completeness: ${completeness}%`, `Types: ${extract.schemaTypes.join(', ')}`]
+  if (extract.schemaCompleteness.missingFields.length > 0) {
+    details.push(`Missing: ${extract.schemaCompleteness.missingFields.slice(0, 3).join(', ')}`)
+  }
   return {
     score,
     confidence: 'high',
-    reason: `Schema types found: ${extract.schemaTypes.join(', ')}`,
+    reason: details.join('; '),
   }
 }
 
@@ -184,11 +190,25 @@ function estimateKnowledgeGraph(extract: WebsiteExtract): EstimatedSignal {
   }
 }
 
-function estimateMessagingConsistency(): EstimatedSignal {
+function estimateMessagingConsistency(extract: WebsiteExtract): EstimatedSignal {
+  let score = 2
+  const reasons: string[] = []
+
+  // Social profiles linked = signals of multi-platform presence
+  if (extract.socialProfiles.length >= 3) { score++; reasons.push(`${extract.socialProfiles.length} social profiles linked`) }
+  else if (extract.socialProfiles.length > 0) { reasons.push(`${extract.socialProfiles.length} social profile(s) linked`) }
+  else { reasons.push('No social profiles detected') }
+
+  // Schema sameAs = structured social linking
+  if (extract.schemaCompleteness.missingFields.every(f => !f.includes('sameAs'))) {
+    score++
+    reasons.push('sameAs schema present')
+  }
+
   return {
-    score: 3,
-    confidence: 'low',
-    reason: 'Cannot assess cross-platform consistency from a single page scan',
+    score: Math.min(score, 5),
+    confidence: extract.socialProfiles.length > 0 ? 'medium' : 'low',
+    reason: reasons.join('; ') + '; full consistency requires cross-platform review',
   }
 }
 

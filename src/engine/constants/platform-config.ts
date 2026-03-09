@@ -30,6 +30,20 @@ export const PLATFORM_CONFIGS: PlatformConfig[] = [
     prioritySignals: ['entityClarity', 'credibilitySignals', 'authoritySignals', 'messagingConsistency'],
     description: 'Prioritizes clear entity explanations, neutral authority content, and credibility signals',
   },
+  {
+    key: 'perplexity',
+    label: 'Perplexity',
+    color: 'perplexity',
+    prioritySignals: ['citations', 'authoritySignals', 'faqCoverage', 'comparisonPresence'],
+    description: 'Prioritizes cited sources, authoritative content, FAQ coverage, and comparison presence',
+  },
+  {
+    key: 'aiOverviews',
+    label: 'AI Overviews',
+    color: 'aiOverviews',
+    prioritySignals: ['structuredData', 'faqCoverage', 'reviews', 'gbpCompleteness'],
+    description: 'Prioritizes schema markup, FAQ content, review signals, and Google Business Profile',
+  },
 ]
 
 export const PLATFORM_MAP = Object.fromEntries(

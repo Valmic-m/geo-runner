@@ -26,6 +26,8 @@ export const FIELD_HELP: Record<string, string> = {
   chatgptInclusion: 'Ask ChatGPT 10 relevant questions about your service category and area. Count how many responses mention your business. That percentage is your approximate inclusion rate.',
   geminiInclusion: 'Ask Google Gemini 10 relevant questions about your service category and area. Count how many responses mention your business. That percentage is your approximate inclusion rate.',
   claudeInclusion: 'Ask Claude 10 relevant questions about your service category and area. Count how many responses mention your business. That percentage is your approximate inclusion rate.',
+  perplexityInclusion: 'Ask Perplexity 10 relevant questions about your service category and area. Count how many responses mention or cite your business. That percentage is your approximate inclusion rate.',
+  aiOverviewsInclusion: 'Search Google for 10 relevant questions about your service category. Count how many AI Overview results mention your business. That percentage is your approximate inclusion rate.',
   competitorDominance: 'Of the AI responses that mention businesses in your category, what percentage mention competitors instead of you? High dominance means competitors are getting recommended more.',
 
   // Focus

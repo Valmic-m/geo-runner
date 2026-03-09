@@ -15,7 +15,7 @@ import { cn } from '@/lib/cn'
 
 export function WebsiteExtractPage() {
   const navigate = useNavigate()
-  const { setExtractedData } = useExtractedData()
+  const { setExtractedData, markWorkflowCompleted } = useExtractedData()
   const [url, setUrl] = useState('')
   const [isFetching, setIsFetching] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
@@ -43,7 +43,8 @@ export function WebsiteExtractPage() {
         estimatedBottleneck: result.estimatedBottleneck,
       })
     }
-  }, [result, setExtractedData])
+    markWorkflowCompleted('website-extract')
+  }, [result, setExtractedData, markWorkflowCompleted])
 
   const handleFetchAndAnalyze = async () => {
     setFetchError(null)
@@ -289,6 +290,61 @@ export function WebsiteExtractPage() {
                       <span key={i} className="text-sm px-3 py-1 rounded-full bg-success/10 text-success">{t}</span>
                     ))}
                   </div>
+                </CollapsibleSection>
+              )}
+
+              <CollapsibleSection title="Schema Completeness" badge={`${result.extract.schemaCompleteness.score}%`} defaultOpen={false}>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-surface-alt rounded-full overflow-hidden">
+                      <div
+                        className={cn('h-full rounded-full', result.extract.schemaCompleteness.score >= 60 ? 'bg-success' : result.extract.schemaCompleteness.score >= 30 ? 'bg-warning' : 'bg-danger')}
+                        style={{ width: `${result.extract.schemaCompleteness.score}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium">{result.extract.schemaCompleteness.score}%</span>
+                  </div>
+                  {result.extract.schemaCompleteness.missingFields.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-text-muted mb-1">Missing:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {result.extract.schemaCompleteness.missingFields.map((f, i) => (
+                          <span key={i} className="text-xs px-2 py-0.5 rounded bg-danger/10 text-danger">{f}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CollapsibleSection>
+
+              <CollapsibleSection title="Content Depth" defaultOpen={false}>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="p-2 rounded bg-surface-alt">
+                    <p className="text-text-muted text-xs">Word Count</p>
+                    <p className="font-medium">{result.extract.contentDepth.totalWordCount.toLocaleString()}</p>
+                  </div>
+                  <div className="p-2 rounded bg-surface-alt">
+                    <p className="text-text-muted text-xs">Headings</p>
+                    <p className="font-medium">{result.extract.contentDepth.headingCount} {result.extract.contentDepth.headingHierarchyValid ? '(valid hierarchy)' : '(hierarchy issues)'}</p>
+                  </div>
+                  <div className="p-2 rounded bg-surface-alt">
+                    <p className="text-text-muted text-xs">Internal Links</p>
+                    <p className="font-medium">{result.extract.contentDepth.internalLinkCount}</p>
+                  </div>
+                  <div className="p-2 rounded bg-surface-alt">
+                    <p className="text-text-muted text-xs">Image Alt Coverage</p>
+                    <p className="font-medium">{result.extract.contentDepth.imagesWithAlt}/{result.extract.contentDepth.imageCount} ({result.extract.contentDepth.altTextCoverage}%)</p>
+                  </div>
+                </div>
+              </CollapsibleSection>
+
+              {result.extract.socialProfiles.length > 0 && (
+                <CollapsibleSection title="Social Profiles Detected" badge={`${result.extract.socialProfiles.length}`} defaultOpen={false}>
+                  <ul className="space-y-1">
+                    {result.extract.socialProfiles.map((url, i) => (
+                      <li key={i} className="text-sm text-primary truncate">{url}</li>
+                    ))}
+                  </ul>
                 </CollapsibleSection>
               )}
 

@@ -1,5 +1,6 @@
 import type { WebsiteAnalysis } from '@/engine/analyzers/website-analyzer'
 import { parseWebsiteContent } from '@/engine/parsers/website-parser'
+import type { WebsiteExtract } from '@/engine/parsers/website-parser'
 import { analyzeWebsite } from '@/engine/analyzers/website-analyzer'
 import { estimateSignals, estimateFocusTier, estimateBottleneck } from '@/engine/analyzers/signal-estimator'
 import type { EstimatedSignals } from '@/engine/analyzers/signal-estimator'
@@ -10,6 +11,7 @@ export interface WebsiteExtractInput {
 }
 
 export interface WebsiteExtractOutput {
+  extract: WebsiteExtract
   analysis: WebsiteAnalysis
   estimatedSignals: EstimatedSignals
   estimatedFocusTier: string
@@ -31,6 +33,7 @@ export function runWebsiteExtractWorkflow(input: WebsiteExtractInput): WebsiteEx
   const estimated = estimateSignals(extract)
 
   return {
+    extract,
     analysis: analyzeWebsite(extract),
     estimatedSignals: estimated,
     estimatedFocusTier: estimateFocusTier(estimated),

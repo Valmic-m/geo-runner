@@ -24,7 +24,7 @@ const steps = [
     icon: FlaskConical,
     title: 'Run AI Visibility Tests',
     description:
-      'Generate test prompts for ChatGPT, Claude, and Gemini. Run them on each platform to see if the client is mentioned, recommended, or absent. This is your baseline.',
+      'Generate test prompts for ChatGPT, Claude, Gemini, Perplexity, and AI Overviews. Run them on each platform to see if the client is mentioned, recommended, or absent. This is your baseline.',
     link: { to: '/generate-tests', label: 'Generate Tests' },
   },
   {
@@ -61,7 +61,7 @@ const workflows = [
     title: 'Generate AI Tests',
     badge: null,
     when: 'After creating a snapshot, and monthly to track progress',
-    description: 'Produce test prompts to check visibility on ChatGPT, Claude, and Gemini.',
+    description: 'Produce test prompts to check visibility on ChatGPT, Claude, Gemini, Perplexity, and AI Overviews.',
     inputs: 'Client GEO Snapshot',
     outputs: 'Platform-specific test prompts + interactive evaluation prompt',
   },
@@ -122,7 +122,7 @@ export function HomePage() {
       <div className="text-center max-w-2xl mx-auto">
         <h2 className="text-2xl font-bold text-text">GEO Runner</h2>
         <p className="text-text-muted mt-3">
-          AI platforms like ChatGPT, Claude, and Gemini now influence buying decisions by
+          AI platforms like ChatGPT, Claude, Gemini, Perplexity, and Google AI Overviews now influence buying decisions by
           recommending brands directly to users. Generative Engine Optimization (GEO) is the
           practice of strengthening the signals these AI models use to decide which brands to
           mention, recommend, and trust.
