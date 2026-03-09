@@ -1,6 +1,6 @@
-import { HashRouter, Routes, Route } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
-import { ExtractedDataProvider } from '@/context/ExtractedDataContext'
+import { SessionProvider } from '@/context/SessionContext'
 import { HomePage } from '@/pages/HomePage'
 import { MonthlyPage } from '@/pages/MonthlyPage'
 import { QuarterlyPage } from '@/pages/QuarterlyPage'
@@ -11,18 +11,29 @@ import { WebsiteExtractPage } from '@/pages/WebsiteExtractPage'
 function App() {
   return (
     <HashRouter>
-      <ExtractedDataProvider>
+      <SessionProvider>
       <AppShell>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/monthly" element={<MonthlyPage />} />
-          <Route path="/quarterly" element={<QuarterlyPage />} />
-          <Route path="/annual" element={<AnnualPage />} />
-          <Route path="/generate-tests" element={<GenerateTestsPage />} />
-          <Route path="/website-extract" element={<WebsiteExtractPage />} />
+
+          {/* Setup routes */}
+          <Route path="/setup/extract" element={<WebsiteExtractPage />} />
+          <Route path="/setup/tests" element={<GenerateTestsPage />} />
+
+          {/* Workflow routes */}
+          <Route path="/workflows/monthly" element={<MonthlyPage />} />
+          <Route path="/workflows/quarterly" element={<QuarterlyPage />} />
+          <Route path="/workflows/annual" element={<AnnualPage />} />
+
+          {/* Redirects from old paths */}
+          <Route path="/website-extract" element={<Navigate to="/setup/extract" replace />} />
+          <Route path="/generate-tests" element={<Navigate to="/setup/tests" replace />} />
+          <Route path="/monthly" element={<Navigate to="/workflows/monthly" replace />} />
+          <Route path="/quarterly" element={<Navigate to="/workflows/quarterly" replace />} />
+          <Route path="/annual" element={<Navigate to="/workflows/annual" replace />} />
         </Routes>
       </AppShell>
-      </ExtractedDataProvider>
+      </SessionProvider>
     </HashRouter>
   )
 }

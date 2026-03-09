@@ -1,10 +1,13 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { BookOpen } from 'lucide-react'
 import { TabNav } from './TabNav'
-import { useExtractedData } from '@/context/ExtractedDataContext'
+import { ReferenceDrawer } from './ReferenceDrawer'
+import { useSession } from '@/context/SessionContext'
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { completedWorkflows, clearSession } = useExtractedData()
-  const hasSession = completedWorkflows.length > 0
+  const { completedWorkflows, currentSnapshot, clearSession } = useSession()
+  const hasSession = completedWorkflows.length > 0 || !!currentSnapshot
+  const [referenceOpen, setReferenceOpen] = useState(false)
 
   return (
     <div className="min-h-screen bg-surface-alt">
@@ -15,6 +18,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             <p className="text-xs text-text-muted">Generative Engine Optimization Workflow Tool</p>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setReferenceOpen(true)}
+              className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text px-3 py-1 rounded-full border border-border hover:border-primary/30 transition-colors"
+              title="GEO Reference Guide"
+            >
+              <BookOpen size={13} />
+              Reference
+            </button>
             {hasSession && (
               <button
                 onClick={clearSession}
@@ -24,7 +35,11 @@ export function AppShell({ children }: { children: ReactNode }) {
               </button>
             )}
             <div className="text-xs text-text-muted bg-surface-alt px-3 py-1 rounded-full border border-border">
-              {hasSession ? `${completedWorkflows.length} workflow${completedWorkflows.length > 1 ? 's' : ''} completed` : 'Session saved locally'}
+              {currentSnapshot
+                ? currentSnapshot.businessName
+                : hasSession
+                  ? `${completedWorkflows.length} workflow${completedWorkflows.length > 1 ? 's' : ''} completed`
+                  : 'No client loaded'}
             </div>
           </div>
         </div>
@@ -40,6 +55,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           </p>
         </div>
       </footer>
+
+      {referenceOpen && <ReferenceDrawer onClose={() => setReferenceOpen(false)} />}
     </div>
   )
 }
