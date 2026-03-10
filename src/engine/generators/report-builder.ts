@@ -1,9 +1,11 @@
-import type { SignalDiagnostic, Recommendation } from '@/types/recommendations'
+import type { SignalDiagnostic, Recommendation, ImplementationStep } from '@/types/recommendations'
 import type { Artifact } from '@/types/artifacts'
 import type { ClientGeoSnapshot, PlatformKey } from '@/types/snapshot'
 import type { DistributionAction } from '@/engine/modules/signal-distribution-planner'
 import type { DeploymentStep } from '@/engine/generators/deployment-planner'
+import type { SprintAction } from '@/engine/workflows/monthly-workflow'
 import { PLATFORM_MAP } from '@/engine/constants/platform-config'
+import { ARTIFACT_TEMPLATES } from '@/engine/constants/artifact-templates'
 
 export interface ReportData {
   title: string
@@ -32,11 +34,14 @@ export interface ReportData {
     description: string
     timeline: string
     impact: string
+    steps: ImplementationStep[]
+    successCriteria: string
   }[]
   artifacts: {
     title: string
     content: string
     deployTo: string[]
+    usageInstructions: string
   }[]
   distributionPlan: {
     action: string
@@ -49,17 +54,9 @@ export interface ReportData {
     target: string
     priority: string
   }[]
-  sprintActions: string[]
+  sprintActions: SprintAction[]
 }
 
-function timelineFromImpact(impact: string): string {
-  switch (impact) {
-    case 'high': return 'This week'
-    case 'medium': return 'Within 2 weeks'
-    case 'low': return 'Within 30 days'
-    default: return 'Within 30 days'
-  }
-}
 
 function generateExecutiveSummary(
   businessName: string,
@@ -108,7 +105,7 @@ export function buildMonthlyReport(data: {
   artifacts: Artifact[]
   distributionActions: DistributionAction[]
   deploymentPlan: DeploymentStep[]
-  sprintActions: string[]
+  sprintActions: SprintAction[]
 }): ReportData {
   return {
     title: 'Monthly GEO Visibility Report',
@@ -138,13 +135,16 @@ export function buildMonthlyReport(data: {
       rank: i + 1,
       title: r.title,
       description: r.description,
-      timeline: timelineFromImpact(r.impact),
+      timeline: r.timeline,
       impact: r.impact,
+      steps: r.steps,
+      successCriteria: r.successCriteria,
     })),
     artifacts: data.artifacts.map(a => ({
       title: a.title,
       content: a.content,
       deployTo: a.deployment.targets,
+      usageInstructions: ARTIFACT_TEMPLATES[a.type]?.usageInstructions ?? '',
     })),
     distributionPlan: data.distributionActions.map(d => ({
       action: d.action,
@@ -232,7 +232,7 @@ export function buildAnnualReport(data: {
     platformVisibility: buildPlatformVisibility(data.snapshot),
     priorityActions: [],
     artifacts: data.entityDefinitionBlock
-      ? [{ title: 'Entity Definition Block', content: data.entityDefinitionBlock, deployTo: ['Website', 'Schema Markup'] }]
+      ? [{ title: 'Entity Definition Block', content: data.entityDefinitionBlock, deployTo: ['Website', 'Schema Markup'], usageInstructions: ARTIFACT_TEMPLATES['entity-definition-block']?.usageInstructions ?? '' }]
       : [],
     distributionPlan: [],
     deploymentSteps: [],

@@ -66,7 +66,7 @@ function buildFallbackSignals(estimated?: EstimatedSignals): Partial<SignalScore
   return scores
 }
 
-export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot, previousSignals, submitLabel, cycle = 'annual' }: SnapshotFormProps) {
+export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot, previousSignals: _previousSignals, submitLabel, cycle = 'annual' }: SnapshotFormProps) {
   const hasPrefilledData = !!initialSnapshot || !!initialData?.estimatedSignals || !!(initialData?.primaryCategory || initialData?.secondaryCategory || initialData?.audience)
   const [step, setStep] = useState(0)
 
