@@ -24,6 +24,13 @@ export interface MonthlyInput {
   websiteExcerpts?: string
 }
 
+export interface SprintAction {
+  title: string
+  timeline: string
+  steps: string[]
+  successCriteria: string
+}
+
 export interface MonthlyOutput {
   snapshot: ClientGeoSnapshot
   diagnostics: SignalDiagnostic[]
@@ -35,7 +42,7 @@ export interface MonthlyOutput {
   distributionActions: DistributionAction[]
   deploymentPlan: DeploymentStep[]
   updatedSnapshotText: string
-  sprintActions: string[]
+  sprintActions: SprintAction[]
 }
 
 export function runMonthlyWorkflow(input: MonthlyInput): MonthlyOutput {
@@ -72,13 +79,18 @@ export function runMonthlyWorkflow(input: MonthlyInput): MonthlyOutput {
   const artifacts = generateArtifacts(recommendations, snapshot)
 
   // Signal distribution check
-  const { distributionActions } = ensureExternalDistribution(artifacts)
+  const { distributionActions } = ensureExternalDistribution(artifacts, snapshot.primaryCategory)
 
   // Deployment plan
   const deploymentPlan = createDeploymentPlan(artifacts)
 
-  // Sprint actions (top 3-5)
-  const sprintActions = recommendations.slice(0, 5).map((r, i) => `${i + 1}. ${r.title}: ${r.description}`)
+  // Sprint actions — structured with steps and grouped by timeline
+  const sprintActions: SprintAction[] = recommendations.map(r => ({
+    title: r.title,
+    timeline: r.timeline,
+    steps: r.steps.map(s => s.action),
+    successCriteria: r.successCriteria,
+  }))
 
   // Updated snapshot text
   const updatedSnapshotText = formatSnapshot(snapshot)

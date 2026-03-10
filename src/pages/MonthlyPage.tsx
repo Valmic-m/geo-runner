@@ -19,9 +19,13 @@ import type { ClientGeoSnapshot } from '@/types/snapshot'
 import type { MonthlyChangeLog } from '@/types/changelog'
 import { cn } from '@/lib/cn'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { JourneyBreadcrumb } from '@/components/shared/JourneyBreadcrumb'
+import { NEW_CLIENT_JOURNEY, RETURNING_CLIENT_JOURNEY } from '@/lib/journey-definitions'
+import { buildMonthlyReport } from '@/engine/generators/report-builder'
+import { renderReportHtml } from '@/engine/generators/report-html-template'
 
 export function MonthlyPage() {
-  const { extractedData, clearExtractedData, setCurrentSnapshot, currentSnapshot, lastSnapshot, markWorkflowCompleted } = useSession()
+  const { extractedData, clearExtractedData, setCurrentSnapshot, currentSnapshot, lastSnapshot, markWorkflowCompleted, completedWorkflows } = useSession()
   const [changelog, setChangelog] = useState<MonthlyChangeLog | null>(null)
   const [editingSnapshot, setEditingSnapshot] = useState(false)
 
@@ -55,7 +59,7 @@ export function MonthlyPage() {
         ...result.diagnostics.map((d) => `- **${d.label}**: ${d.score}/5 (${d.status}) - ${d.recommendation}`),
         '',
         '## Sprint Actions',
-        ...result.sprintActions,
+        ...result.sprintActions.map((s, i) => `${i + 1}. **${s.title}** (${s.timeline})\n   ${s.steps.map((step, j) => `${j + 1}. ${step}`).join('\n   ')}\n   *Done when: ${s.successCriteria}*`),
         '',
         '## Artifacts Generated',
         ...result.artifacts.map((a) => `### ${a.title}\n${a.content}\n`),
@@ -68,8 +72,27 @@ export function MonthlyPage() {
       ].join('\n')
     : ''
 
+  const reportHtml = result
+    ? renderReportHtml(buildMonthlyReport({
+        snapshot: result.snapshot,
+        diagnostics: result.diagnostics,
+        readinessScore: result.readinessScore,
+        readinessLabel: result.readinessLabel,
+        recommendations: result.recommendations,
+        artifacts: result.artifacts,
+        distributionActions: result.distributionActions,
+        deploymentPlan: result.deploymentPlan,
+        sprintActions: result.sprintActions,
+      }))
+    : ''
+
   return (
     <div className="space-y-6">
+      <JourneyBreadcrumb
+        journey={completedWorkflows.includes('website-extract') ? NEW_CLIENT_JOURNEY : RETURNING_CLIENT_JOURNEY}
+        activeStepIndex={completedWorkflows.includes('website-extract') ? 2 : 0}
+        hasResults={!!result}
+      />
       <PageHeader title="Monthly GEO Cycle" subtitle="Run a full monthly diagnostic with signal analysis, recommendations, and artifact generation." />
 
       {!result ? (
@@ -120,7 +143,7 @@ export function MonthlyPage() {
               <h3 className="font-semibold text-text">Results: {result.snapshot.businessName}</h3>
               <div className="flex gap-2">
                 <CopyButton text={exportContent} label="Copy All" />
-                <ExportButton content={exportContent} filename={`geo-monthly-${result.snapshot.businessName}`} />
+                <ExportButton content={exportContent} filename={`geo-monthly-${result.snapshot.businessName}`} reportHtml={reportHtml} />
               </div>
             </div>
 
@@ -129,7 +152,7 @@ export function MonthlyPage() {
                 { label: 'Readiness', value: `${result.readinessScore}%`, color: result.readinessScore >= 60 ? 'success' : result.readinessScore >= 40 ? 'warning' : 'danger' },
                 { label: 'Issues', value: result.diagnostics.filter((d) => d.status === 'critical' || d.status === 'weak').length, color: 'danger' },
                 { label: 'Artifacts', value: result.artifacts.length, color: 'primary' },
-                { label: 'Top Priority', value: result.sprintActions[0]?.replace(/^\d+\.\s*/, '').slice(0, 30) + '...' || '—', color: 'default' },
+                { label: 'Top Priority', value: result.sprintActions[0]?.title?.slice(0, 30) + '...' || '—', color: 'default' },
               ]}
             />
             {result.industryVertical && result.industryVertical !== 'General / Default' && (
@@ -155,16 +178,30 @@ export function MonthlyPage() {
             <CollapsibleSection title="Recommendations" badge={`${result.recommendations.length}`}>
               <div className="space-y-3">
                 {result.recommendations.map((r, i) => (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-surface-alt">
-                    <span className="text-xs font-bold text-primary bg-primary/10 rounded-full w-6 h-6 flex items-center justify-center shrink-0">
-                      {i + 1}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-sm">{r.title}</span>
-                        <PlatformBadge platform={r.platform} />
+                  <div key={i} className="p-3 rounded-lg bg-surface-alt">
+                    <div className="flex items-start gap-3">
+                      <span className="text-xs font-bold text-primary bg-primary/10 rounded-full w-6 h-6 flex items-center justify-center shrink-0">
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm">{r.title}</span>
+                          <PlatformBadge platform={r.platform} />
+                          <span className={cn(
+                            'text-[10px] font-semibold px-1.5 py-0.5 rounded-full uppercase',
+                            r.timeline === 'This week' ? 'bg-danger/10 text-danger' : r.timeline === 'Within 2 weeks' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success',
+                          )}>{r.timeline}</span>
+                        </div>
+                        <p className="text-xs text-text-muted mt-1">{r.description}</p>
+                        {r.steps.length > 0 && (
+                          <ol className="mt-2 ml-4 list-decimal text-xs text-text-muted space-y-1">
+                            {r.steps.map((s) => (
+                              <li key={s.step}><span className="font-medium text-text">{s.action}</span> — {s.detail}</li>
+                            ))}
+                          </ol>
+                        )}
+                        <p className="mt-2 text-xs text-success"><span className="font-semibold">Success criteria:</span> {r.successCriteria}</p>
                       </div>
-                      <p className="text-xs text-text-muted mt-1">{r.description}</p>
                     </div>
                   </div>
                 ))}
@@ -198,11 +235,33 @@ export function MonthlyPage() {
               </div>
             </CollapsibleSection>
 
-            <CollapsibleSection title="Monthly Sprint" badge="Top Actions" priority="high">
-              <div className="space-y-1">
-                {result.sprintActions.map((action, i) => (
-                  <p key={i} className="text-sm text-text">{action}</p>
-                ))}
+            <CollapsibleSection title="Implementation Sprint" badge={`${result.sprintActions.length} actions`} priority="high">
+              <div className="space-y-4">
+                {['This week', 'Within 2 weeks', 'Within 30 days'].map(timeline => {
+                  const group = result.sprintActions.filter(s => s.timeline === timeline)
+                  if (group.length === 0) return null
+                  return (
+                    <div key={timeline}>
+                      <p className={cn(
+                        'text-xs font-semibold uppercase tracking-wide mb-2 px-2 py-1 rounded-full inline-block',
+                        timeline === 'This week' ? 'bg-danger/10 text-danger' : timeline === 'Within 2 weeks' ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success',
+                      )}>{timeline}</p>
+                      <div className="space-y-2">
+                        {group.map((action, i) => (
+                          <div key={i} className="p-3 rounded-lg bg-surface-alt">
+                            <p className="font-medium text-sm text-text">{action.title}</p>
+                            <ol className="mt-1 ml-4 list-decimal text-xs text-text-muted space-y-0.5">
+                              {action.steps.map((step, j) => (
+                                <li key={j}>{step}</li>
+                              ))}
+                            </ol>
+                            <p className="mt-1.5 text-xs text-success"><span className="font-semibold">Done when:</span> {action.successCriteria}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </CollapsibleSection>
 

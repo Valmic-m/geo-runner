@@ -9,6 +9,12 @@ export interface SignalDiagnostic {
   recommendation: string
 }
 
+export interface ImplementationStep {
+  step: number
+  action: string
+  detail: string
+}
+
 export interface Recommendation {
   priority: number
   signal: SignalKey
@@ -17,4 +23,7 @@ export interface Recommendation {
   description: string
   platform: PlatformKey | 'all'
   impact: 'high' | 'medium' | 'low'
+  steps: ImplementationStep[]
+  timeline: string
+  successCriteria: string
 }

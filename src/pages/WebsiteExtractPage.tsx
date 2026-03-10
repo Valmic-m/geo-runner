@@ -13,6 +13,8 @@ import { useSession } from '@/context/SessionContext'
 import { fetchUrlContent } from '@/lib/fetch-url'
 import { cn } from '@/lib/cn'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { JourneyBreadcrumb } from '@/components/shared/JourneyBreadcrumb'
+import { NEW_CLIENT_JOURNEY } from '@/lib/journey-definitions'
 
 export function WebsiteExtractPage() {
   const navigate = useNavigate()
@@ -102,6 +104,7 @@ export function WebsiteExtractPage() {
 
   return (
     <div className="space-y-6">
+      <JourneyBreadcrumb journey={NEW_CLIENT_JOURNEY} activeStepIndex={0} hasResults={!!result} />
       <PageHeader title="Website Content Extract" subtitle="Scan a website to auto-detect categories, audience, and missing trust signals." />
 
       {/* Input section — full-width centered when no results */}

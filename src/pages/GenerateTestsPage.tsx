@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection'
 import { CopyButton } from '@/components/shared/CopyButton'
 import { ExportButton } from '@/components/shared/ExportButton'
@@ -14,6 +15,8 @@ import { PLATFORM_CONFIGS } from '@/engine/constants/platform-config'
 import type { ClientGeoSnapshot, PlatformKey } from '@/types/snapshot'
 import { cn } from '@/lib/cn'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { JourneyBreadcrumb } from '@/components/shared/JourneyBreadcrumb'
+import { NEW_CLIENT_JOURNEY } from '@/lib/journey-definitions'
 
 export function GenerateTestsPage() {
   const { extractedData, clearExtractedData, currentSnapshot, setCurrentSnapshot, markWorkflowCompleted } = useSession()
@@ -53,6 +56,7 @@ export function GenerateTestsPage() {
 
   return (
     <div className="space-y-6">
+      <JourneyBreadcrumb journey={NEW_CLIENT_JOURNEY} activeStepIndex={1} hasResults={!!result} />
       <PageHeader title="Generate AI Visibility Tests" subtitle="Produce test prompts to check your client's visibility on ChatGPT, Claude, Gemini, Perplexity, and AI Overviews." />
 
       {!result ? (
@@ -92,6 +96,18 @@ export function GenerateTestsPage() {
               <div className="flex gap-2">
                 <CopyButton text={allPromptsText} label="Copy All" />
                 <ExportButton content={allPromptsText} filename={`geo-tests-${result.snapshot.businessName}`} />
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm text-text">
+              <span className="text-primary shrink-0 mt-0.5">&#x2192;</span>
+              <div>
+                <p className="font-medium">After testing</p>
+                <p className="text-xs text-text-muted mt-0.5">
+                  Run these prompts on each platform, then go to your{' '}
+                  <Link to="/workflows/monthly" className="text-primary hover:underline font-medium">Monthly Cycle</Link>{' '}
+                  and answer the AI Visibility questions (Step 3) based on your observations.
+                </p>
               </div>
             </div>
 

@@ -1,5 +1,33 @@
 import type { ClientGeoSnapshot, PlatformKey } from '@/types/snapshot'
 
+/**
+ * Generate 2-3 quick test queries for a single platform.
+ * Used for inline guidance in the AI Visibility step.
+ */
+export function generateQuickTestPrompts(
+  businessName: string,
+  category: string,
+  location: string,
+  _platform: PlatformKey,
+): string[] {
+  const name = businessName || '[Business Name]'
+  const cat = category || '[Category]'
+  const loc = location || '[Location]'
+
+  const prompts: string[] = [
+    `What are the best ${cat} companies?`,
+    `Tell me about ${name}`,
+  ]
+
+  if (loc && loc !== '[Location]') {
+    prompts.push(`Best ${cat} in ${loc}`)
+  } else {
+    prompts.push(`Is ${name} a good ${cat} company?`)
+  }
+
+  return prompts
+}
+
 export interface TestPrompt {
   platform: PlatformKey
   category: string
