@@ -119,7 +119,7 @@ export function MonthlyPage() {
             <>
               <div>
                 <h3 className="text-sm font-semibold text-text mb-3">Client GEO Snapshot</h3>
-                <SnapshotForm key={extractedData ? 'prefilled' : 'empty'} onSubmit={handleRun} isRunning={isRunning} initialData={extractedData ?? undefined} previousSignals={lastSnapshot?.signals} cycle="monthly" />
+                <SnapshotForm key={extractedData ? 'prefilled' : 'empty'} onSubmit={handleRun} isRunning={isRunning} initialData={extractedData ?? undefined} cycle="monthly" />
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-text mb-3">Monthly Change Log <span className="text-text-muted font-normal">(optional)</span></h3>
