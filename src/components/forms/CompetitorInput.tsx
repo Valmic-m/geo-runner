@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, X, Loader2, Globe, Building2 } from 'lucide-react'
+import { Plus, X, Loader2, Globe, Building2, Sparkles } from 'lucide-react'
 import type { Competitor } from '@/types/snapshot'
 import { extractCompetitorName } from '@/lib/competitor-utils'
 import { fetchUrlContent } from '@/lib/fetch-url'
@@ -9,10 +9,11 @@ import { cn } from '@/lib/cn'
 interface CompetitorInputProps {
   competitors: Competitor[]
   onChange: (competitors: Competitor[]) => void
+  suggestedCompetitors?: Competitor[]
   maxCompetitors?: number
 }
 
-export function CompetitorInput({ competitors, onChange, maxCompetitors = 5 }: CompetitorInputProps) {
+export function CompetitorInput({ competitors, onChange, suggestedCompetitors, maxCompetitors = 5 }: CompetitorInputProps) {
   const [newUrl, setNewUrl] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -64,6 +65,15 @@ export function CompetitorInput({ competitors, onChange, maxCompetitors = 5 }: C
     }
   }
 
+  const handleAddSuggested = (suggested: Competitor) => {
+    // Check for duplicates
+    if (competitors.some((c) => c.name.toLowerCase() === suggested.name.toLowerCase() || (c.url && c.url === suggested.url))) {
+      return
+    }
+    if (competitors.length >= maxCompetitors) return
+    onChange([...competitors, suggested])
+  }
+
   const handleRemove = (index: number) => {
     onChange(competitors.filter((_, i) => i !== index))
   }
@@ -75,8 +85,39 @@ export function CompetitorInput({ competitors, onChange, maxCompetitors = 5 }: C
     }
   }
 
+  // Filter out suggestions that are already added
+  const availableSuggestions = suggestedCompetitors?.filter(
+    (s) => !competitors.some((c) => c.name.toLowerCase() === s.name.toLowerCase() || (c.url && s.url && c.url === s.url)),
+  )
+
   return (
     <div className="space-y-3">
+      {/* AI-discovered suggestions */}
+      {availableSuggestions && availableSuggestions.length > 0 && competitors.length < maxCompetitors && (
+        <div className="space-y-2">
+          <p className="text-xs text-text-muted flex items-center gap-1">
+            <Sparkles size={12} className="text-primary" />
+            AI-discovered competitors — click to add:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {availableSuggestions.map((comp, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => handleAddSuggested(comp)}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/20 bg-primary/5',
+                  'text-sm text-text hover:bg-primary/10 hover:border-primary/40 transition-colors',
+                )}
+              >
+                <Plus size={12} className="text-primary" />
+                {comp.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Existing competitors */}
       {competitors.length > 0 && (
         <div className="space-y-2">

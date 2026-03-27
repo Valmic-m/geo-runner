@@ -1,79 +1,160 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Play, Globe, ChevronDown, ChevronUp, Loader2, ArrowRight, FlaskConical, Calendar, CheckCircle2, HelpCircle, AlertCircle } from 'lucide-react'
+import { Play, Globe, ChevronDown, ChevronUp, Loader2, ArrowRight, FlaskConical, Calendar, CheckCircle2, HelpCircle, AlertCircle, Sparkles, Building2, Search, Brain, Check } from 'lucide-react'
 import type { SignalConfidence } from '@/engine/analyzers/signal-estimator'
 import { SIGNAL_DEFINITIONS } from '@/engine/constants/signal-definitions'
 import { CollapsibleSection } from '@/components/shared/CollapsibleSection'
 import { CopyButton } from '@/components/shared/CopyButton'
 import { ExportButton } from '@/components/shared/ExportButton'
 import { useWorkflow } from '@/hooks/useWorkflow'
-import { runWebsiteExtractWorkflow } from '@/engine/workflows/website-extract-workflow'
+import { runWebsiteExtractWorkflow, runEnhancedWebsiteExtractWorkflow } from '@/engine/workflows/website-extract-workflow'
 import type { WebsiteExtractInput, WebsiteExtractOutput } from '@/engine/workflows/website-extract-workflow'
 import { useSession } from '@/context/SessionContext'
-import { fetchUrlContent } from '@/lib/fetch-url'
+import { fetchUrlContent, fetchEnhancedExtract } from '@/lib/fetch-url'
 import { cn } from '@/lib/cn'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { JourneyBreadcrumb } from '@/components/shared/JourneyBreadcrumb'
 import { NEW_CLIENT_JOURNEY } from '@/lib/journey-definitions'
+import type { Competitor } from '@/types/snapshot'
+
+type ExtractionStep = 'idle' | 'scraping' | 'analyzing' | 'discovering' | 'done'
+
+const STEP_LABELS: Record<ExtractionStep, string> = {
+  idle: '',
+  scraping: 'Scraping website...',
+  analyzing: 'Analyzing with AI...',
+  discovering: 'Discovering competitors...',
+  done: 'Complete!',
+}
 
 export function WebsiteExtractPage() {
   const navigate = useNavigate()
   const { setExtractedData, markWorkflowCompleted } = useSession()
   const [url, setUrl] = useState('')
   const [isFetching, setIsFetching] = useState(false)
+  const [extractionStep, setExtractionStep] = useState<ExtractionStep>('idle')
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [showManualPaste, setShowManualPaste] = useState(false)
   const [manualContent, setManualContent] = useState('')
 
-  const { result, error, isRunning, run } = useWorkflow<WebsiteExtractInput, WebsiteExtractOutput>(runWebsiteExtractWorkflow)
+  // Competitor selection state
+  const [selectedCompetitors, setSelectedCompetitors] = useState<Set<number>>(new Set())
+
+  const { result, setResult, error, isRunning, run } = useWorkflow<WebsiteExtractInput, WebsiteExtractOutput>(runWebsiteExtractWorkflow)
 
   useEffect(() => {
     if (result) {
-      setExtractedData({
-        primaryCategory: result.analysis.categories[0] || '',
-        secondaryCategory: result.analysis.categories[1] || '',
-        audience: result.analysis.audience.join(', '),
-        recommendations: result.analysis.recommendations,
-        missingTrustSignals: result.analysis.missingTrustSignals,
-        geoScope: result.geoScope,
-        revenueModel: result.revenueModel,
-        regulated: result.regulated,
-        competitors: result.competitors,
-        businessNameCandidates: result.businessNameCandidates,
-        estimatedSignals: result.estimatedSignals,
-        estimatedFocusTier: result.estimatedFocusTier,
-        estimatedBottleneck: result.estimatedBottleneck,
-      })
+      // Auto-select all discovered competitors by default
+      if (result.discoveredCompetitors?.length) {
+        setSelectedCompetitors(new Set(result.discoveredCompetitors.map((_, i) => i)))
+      }
     }
-    markWorkflowCompleted('website-extract')
-  }, [result, setExtractedData, markWorkflowCompleted])
+  }, [result])
 
+  const saveExtractedData = (workflowResult: WebsiteExtractOutput) => {
+    const selected = workflowResult.discoveredCompetitors?.filter((_, i) => selectedCompetitors.has(i)) || []
+    const allCompetitors = [...workflowResult.competitors, ...selected]
+
+    setExtractedData({
+      primaryCategory: workflowResult.extractionSource === 'enhanced'
+        ? (workflowResult.businessNameCandidates[0] ? workflowResult.analysis.categories[0] || '' : '')
+        : (workflowResult.analysis.categories[0] || ''),
+      secondaryCategory: workflowResult.analysis.categories[1] || '',
+      audience: workflowResult.analysis.audience.join(', '),
+      recommendations: workflowResult.analysis.recommendations,
+      missingTrustSignals: workflowResult.analysis.missingTrustSignals,
+      geoScope: workflowResult.geoScope,
+      revenueModel: workflowResult.revenueModel,
+      regulated: workflowResult.regulated,
+      competitors: allCompetitors,
+      businessNameCandidates: workflowResult.businessNameCandidates,
+      estimatedSignals: workflowResult.estimatedSignals,
+      estimatedFocusTier: workflowResult.estimatedFocusTier,
+      estimatedBottleneck: workflowResult.estimatedBottleneck,
+      discoveredCompetitors: workflowResult.discoveredCompetitors,
+      llmConfidence: workflowResult.llmConfidence,
+      extractionSource: workflowResult.extractionSource,
+      location: workflowResult.location,
+    })
+    markWorkflowCompleted('website-extract')
+  }
+
+  // Enhanced extraction: Jina + OpenAI + Google CSE
   const handleFetchAndAnalyze = async () => {
     setFetchError(null)
     setIsFetching(true)
+    setExtractionStep('scraping')
+
     try {
-      const fetched = await fetchUrlContent(url)
-      if (!fetched.plainText.trim()) {
-        throw new Error('No content could be extracted from this URL')
+      // Try enhanced extraction first
+      setExtractionStep('scraping')
+      const enhanced = await fetchEnhancedExtract(url)
+
+      setExtractionStep('analyzing')
+      const workflowResult = runEnhancedWebsiteExtractWorkflow(enhanced)
+
+      setExtractionStep('done')
+      setIsFetching(false)
+      setResult(workflowResult)
+      saveExtractedData(workflowResult)
+    } catch {
+      // Fallback to basic extraction
+      console.warn('Enhanced extraction failed, falling back to basic')
+      setExtractionStep('scraping')
+
+      try {
+        const fetched = await fetchUrlContent(url)
+        if (!fetched.plainText.trim()) {
+          throw new Error('No content could be extracted from this URL')
+        }
+        setIsFetching(false)
+        setExtractionStep('idle')
+        run({ websiteContent: fetched.plainText, rawHtml: fetched.rawHtml })
+      } catch (err) {
+        setIsFetching(false)
+        setExtractionStep('idle')
+        setFetchError(err instanceof Error ? err.message : 'Failed to fetch URL')
       }
-      setIsFetching(false)
-      run({ websiteContent: fetched.plainText, rawHtml: fetched.rawHtml })
-    } catch (err) {
-      setIsFetching(false)
-      setFetchError(err instanceof Error ? err.message : 'Failed to fetch URL')
     }
   }
+
+  // Basic extraction result handler (fallback path)
+  useEffect(() => {
+    if (result && !result.extractionSource) {
+      saveExtractedData(result)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result])
 
   const handleManualAnalyze = () => {
     run({ websiteContent: manualContent })
   }
 
-  const confidenceIcon = (confidence: SignalConfidence) => {
+  const toggleCompetitor = (index: number) => {
+    setSelectedCompetitors((prev) => {
+      const next = new Set(prev)
+      if (next.has(index)) {
+        next.delete(index)
+      } else {
+        next.add(index)
+      }
+      return next
+    })
+  }
+
+  const handleContinue = () => {
+    if (result) {
+      saveExtractedData(result)
+    }
+    navigate('/workflows/monthly')
+  }
+
+  const confidenceIcon = (confidence: SignalConfidence | string) => {
     switch (confidence) {
       case 'high': return <CheckCircle2 size={12} className="text-success shrink-0" />
       case 'medium': return <AlertCircle size={12} className="text-warning shrink-0" />
       case 'low': return <HelpCircle size={12} className="text-text-muted shrink-0" />
-      case 'unknown': return <HelpCircle size={12} className="text-text-muted/50 shrink-0" />
+      default: return <HelpCircle size={12} className="text-text-muted/50 shrink-0" />
     }
   }
 
@@ -105,7 +186,7 @@ export function WebsiteExtractPage() {
   return (
     <div className="space-y-6">
       <JourneyBreadcrumb journey={NEW_CLIENT_JOURNEY} activeStepIndex={0} hasResults={!!result} />
-      <PageHeader title="Website Content Extract" subtitle="Scan a website to auto-detect categories, audience, and missing trust signals." />
+      <PageHeader title="Website Content Extract" subtitle="Scan a website to auto-detect categories, audience, competitors, and missing trust signals." />
 
       {/* Input section — full-width centered when no results */}
       {!result && (
@@ -146,14 +227,41 @@ export function WebsiteExtractPage() {
             {isLoading ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                {isFetching ? 'Fetching website...' : 'Analyzing...'}
+                {STEP_LABELS[extractionStep] || 'Processing...'}
               </>
             ) : (
               <>
-                <Play size={16} /> Scan & Analyze Website
+                <Sparkles size={16} /> AI-Powered Scan & Analyze
               </>
             )}
           </button>
+
+          {/* Multi-step progress indicator */}
+          {isLoading && extractionStep !== 'idle' && (
+            <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
+              {(['scraping', 'analyzing', 'discovering'] as const).map((step, i) => {
+                const isActive = step === extractionStep
+                const isDone = ['scraping', 'analyzing', 'discovering'].indexOf(extractionStep) > i
+                return (
+                  <div key={step} className="flex items-center gap-1.5">
+                    {isDone ? (
+                      <CheckCircle2 size={14} className="text-success" />
+                    ) : isActive ? (
+                      <Loader2 size={14} className="text-primary animate-spin" />
+                    ) : (
+                      <div className="w-3.5 h-3.5 rounded-full border border-border" />
+                    )}
+                    <span className={cn('text-xs', isActive ? 'text-primary font-medium' : isDone ? 'text-success' : 'text-text-muted')}>
+                      {step === 'scraping' && 'Scrape'}
+                      {step === 'analyzing' && 'AI Analysis'}
+                      {step === 'discovering' && 'Competitors'}
+                    </span>
+                    {i < 2 && <span className="text-border mx-1">/</span>}
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
           {(fetchError || error) && (
             <div className="text-sm text-danger bg-danger/10 rounded-lg p-3">
@@ -206,12 +314,102 @@ export function WebsiteExtractPage() {
       {result && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-text">Website Analysis</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-text">Website Analysis</h3>
+              {result.extractionSource === 'enhanced' && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  <Sparkles size={10} /> AI-Enhanced
+                </span>
+              )}
+            </div>
             <div className="flex gap-2">
               <CopyButton text={exportContent} label="Copy All" />
               <ExportButton content={exportContent} filename="geo-website-extract" />
             </div>
           </div>
+
+          {/* AI-Detected Business Info (enhanced only) */}
+          {result.extractionSource === 'enhanced' && result.businessNameCandidates[0] && (
+            <div className="p-4 rounded-xl border-2 border-primary/20 bg-primary/5">
+              <h4 className="text-sm font-semibold text-text mb-3 flex items-center gap-2">
+                <Brain size={16} className="text-primary" />
+                AI-Detected Business Info
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { label: 'Business Name', value: result.businessNameCandidates[0], key: 'businessName' },
+                  { label: 'Primary Category', value: result.analysis.categories[0], key: 'primaryCategory' },
+                  { label: 'Secondary Category', value: result.analysis.categories[1], key: 'secondaryCategory' },
+                  { label: 'Audience', value: result.analysis.audience.join(', '), key: 'audience' },
+                  { label: 'Location', value: result.location, key: 'location' },
+                  { label: 'Geo Scope', value: result.geoScope, key: 'geoScope' },
+                  { label: 'Revenue Model', value: result.revenueModel, key: 'revenueModel' },
+                  { label: 'Regulated', value: result.regulated, key: 'regulated' },
+                ].filter((f) => f.value).map((field) => (
+                  <div key={field.key} className="flex items-start gap-2">
+                    {result.llmConfidence?.[field.key] && confidenceIcon(result.llmConfidence[field.key])}
+                    <div>
+                      <p className="text-xs text-text-muted">{field.label}</p>
+                      <p className="text-sm font-medium text-text">{field.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-text-muted mt-3">
+                These values will auto-fill the snapshot form. Green = high confidence, yellow = verify.
+              </p>
+            </div>
+          )}
+
+          {/* Discovered Competitors (enhanced only) */}
+          {result.discoveredCompetitors && result.discoveredCompetitors.length > 0 && (
+            <div className="p-4 rounded-xl border-2 border-primary/20 bg-primary/5">
+              <h4 className="text-sm font-semibold text-text mb-3 flex items-center gap-2">
+                <Search size={16} className="text-primary" />
+                Discovered Competitors
+                <span className="text-xs font-normal text-text-muted">
+                  ({selectedCompetitors.size} of {result.discoveredCompetitors.length} selected)
+                </span>
+              </h4>
+              <p className="text-xs text-text-muted mb-3">
+                Found via web search for businesses in the same category and location. Select which to include in your assessment.
+              </p>
+              <div className="space-y-2">
+                {result.discoveredCompetitors.map((comp: Competitor, i: number) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => toggleCompetitor(i)}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left transition-all',
+                      selectedCompetitors.has(i)
+                        ? 'border-primary bg-primary/10 shadow-sm'
+                        : 'border-border bg-surface hover:border-primary/30',
+                    )}
+                  >
+                    <div className={cn(
+                      'w-5 h-5 rounded flex items-center justify-center shrink-0 transition-colors',
+                      selectedCompetitors.has(i)
+                        ? 'bg-primary text-white'
+                        : 'border border-border',
+                    )}>
+                      {selectedCompetitors.has(i) && <Check size={12} />}
+                    </div>
+                    <Building2 size={14} className="text-text-muted shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-text truncate">{comp.name}</p>
+                      {comp.url && (
+                        <p className="text-xs text-text-muted truncate">{comp.url}</p>
+                      )}
+                      {comp.description && (
+                        <p className="text-xs text-text-muted line-clamp-1">{comp.description}</p>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Always visible: tone + missing signals summary */}
           <div className="p-4 rounded-xl border border-border bg-surface">
@@ -358,8 +556,8 @@ export function WebsiteExtractPage() {
           {result.extract.socialProfiles.length > 0 && (
             <CollapsibleSection title="Social Profiles" badge={`${result.extract.socialProfiles.length}`} defaultOpen={false} priority="low">
               <ul className="space-y-1">
-                {result.extract.socialProfiles.map((url, i) => (
-                  <li key={i} className="text-sm text-primary truncate">{url}</li>
+                {result.extract.socialProfiles.map((profileUrl, i) => (
+                  <li key={i} className="text-sm text-primary truncate">{profileUrl}</li>
                 ))}
               </ul>
             </CollapsibleSection>
@@ -409,11 +607,11 @@ export function WebsiteExtractPage() {
               What's Next?
             </h3>
             <p className="text-sm text-text">
-              Your scan results will <strong>auto-fill the Client Snapshot</strong>. Review the values, then run the full diagnostic.
+              Your scan results will <strong>auto-fill the Client Snapshot</strong>{result.extractionSource === 'enhanced' ? ' with AI-detected business info and selected competitors' : ''}. Review the values, then run the full diagnostic.
             </p>
             <div className="flex flex-col sm:flex-row gap-2 pt-1">
               <button
-                onClick={() => navigate('/workflows/monthly')}
+                onClick={handleContinue}
                 className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary to-primary-dark text-white text-sm font-medium shadow-md shadow-primary/25 hover:shadow-lg active:scale-[0.98] transition-all duration-200"
               >
                 <Calendar size={16} />

@@ -32,9 +32,13 @@ export function useWorkflow<TInput, TOutput>(
     [workflowFn],
   )
 
+  const setResult = useCallback((result: TOutput) => {
+    setState({ result, error: null, isRunning: false })
+  }, [])
+
   const reset = useCallback(() => {
     setState({ result: null, error: null, isRunning: false })
   }, [])
 
-  return { ...state, run, reset }
+  return { ...state, run, setResult, reset }
 }

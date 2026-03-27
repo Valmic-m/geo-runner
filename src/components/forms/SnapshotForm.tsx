@@ -197,7 +197,9 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot
         {hasPrefilledData && step === 0 && (
           <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm text-text">
             <span className="text-primary shrink-0 mt-0.5">&#x2713;</span>
-            Fields were auto-filled from your website scan. Review and adjust as needed.
+            {initialData?.extractionSource === 'enhanced'
+              ? 'Fields were auto-filled using AI analysis. Review and adjust as needed.'
+              : 'Fields were auto-filled from your website scan. Review and adjust as needed.'}
           </div>
         )}
 
@@ -278,6 +280,7 @@ export function SnapshotForm({ onSubmit, isRunning, initialData, initialSnapshot
               <CompetitorInput
                 competitors={competitors}
                 onChange={setCompetitors}
+                suggestedCompetitors={initialData?.discoveredCompetitors}
               />
             </FormField>
           </>

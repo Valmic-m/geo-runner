@@ -25,7 +25,7 @@ import { buildMonthlyReport } from '@/engine/generators/report-builder'
 import { renderReportHtml } from '@/engine/generators/report-html-template'
 
 export function MonthlyPage() {
-  const { extractedData, clearExtractedData, setCurrentSnapshot, currentSnapshot, lastSnapshot, markWorkflowCompleted, completedWorkflows } = useSession()
+  const { extractedData, clearExtractedData, setCurrentSnapshot, currentSnapshot, markWorkflowCompleted, completedWorkflows } = useSession()
   const [changelog, setChangelog] = useState<MonthlyChangeLog | null>(null)
   const [editingSnapshot, setEditingSnapshot] = useState(false)
 

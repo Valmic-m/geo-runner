@@ -19,6 +19,11 @@ export interface ExtractedData {
   estimatedSignals: EstimatedSignals
   estimatedFocusTier: string
   estimatedBottleneck: string
+  // Enhanced extraction fields (optional)
+  discoveredCompetitors?: Competitor[]
+  llmConfidence?: Record<string, string>
+  extractionSource?: 'enhanced' | 'basic'
+  location?: string
 }
 
 export type CompletedWorkflow = 'website-extract' | 'monthly' | 'quarterly' | 'annual' | 'generate-tests'

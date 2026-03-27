@@ -3,6 +3,37 @@ export interface FetchedContent {
   plainText: string
 }
 
+// ─── Enhanced extraction types ──────────────────────────────────────
+
+export interface LLMBusinessAnalysis {
+  businessName: string
+  primaryCategory: string
+  secondaryCategory: string
+  audience: string
+  geoScope: string
+  revenueModel: string
+  regulated: string
+  services: string[]
+  differentiators: string[]
+  location: string
+  confidence: Record<string, 'high' | 'medium' | 'low'>
+}
+
+export interface DiscoveredCompetitor {
+  name: string
+  url: string
+  snippet: string
+  domain: string
+}
+
+export interface EnhancedExtractResult {
+  markdown: string
+  rawHtml: string
+  llmAnalysis: LLMBusinessAnalysis | null
+  discoveredCompetitors: DiscoveredCompetitor[]
+  source: 'jina' | 'fallback' | 'enhanced'
+}
+
 export async function fetchUrlContent(url: string): Promise<FetchedContent> {
   const response = await fetch(`/api/fetch-url?url=${encodeURIComponent(url)}`)
 
@@ -16,6 +47,23 @@ export async function fetchUrlContent(url: string): Promise<FetchedContent> {
     rawHtml,
     plainText: stripHtmlToText(rawHtml),
   }
+}
+
+// ─── Enhanced extraction (Jina + OpenAI + Google CSE) ───────────────
+
+export async function fetchEnhancedExtract(url: string): Promise<EnhancedExtractResult> {
+  const response = await fetch('/api/extract-enhanced', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  })
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Enhanced extraction failed' }))
+    throw new Error(error.error || `Enhanced extraction failed: ${response.status}`)
+  }
+
+  return response.json()
 }
 
 function stripHtmlToText(html: string): string {
