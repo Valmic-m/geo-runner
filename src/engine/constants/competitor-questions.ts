@@ -5,7 +5,7 @@ import type { Competitor } from '@/types/snapshot'
  * Generates dynamic competitor dominance questions based on the user's competitor list.
  * These questions are created at runtime since they depend on the actual competitors entered.
  */
-export function generateCompetitorQuestions(competitors: Competitor[], _platformKeys: string[] = ['chatgpt', 'gemini', 'perplexity']): AssessmentQuestion[] {
+export function generateCompetitorQuestions(competitors: Competitor[]): AssessmentQuestion[] {
   if (competitors.length === 0) return []
 
   const questions: AssessmentQuestion[] = []

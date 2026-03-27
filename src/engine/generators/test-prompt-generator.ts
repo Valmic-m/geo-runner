@@ -8,7 +8,7 @@ export function generateQuickTestPrompts(
   businessName: string,
   category: string,
   location: string,
-  _platform: PlatformKey,
+  _platform: PlatformKey, // eslint-disable-line @typescript-eslint/no-unused-vars
 ): string[] {
   const name = businessName || '[Business Name]'
   const cat = category || '[Category]'

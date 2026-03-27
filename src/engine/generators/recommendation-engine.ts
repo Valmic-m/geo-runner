@@ -6,7 +6,7 @@ import { PLATFORM_CONFIGS } from '@/engine/constants/platform-config'
 
 export function generateRecommendations(
   snapshot: ClientGeoSnapshot,
-  _changelog?: MonthlyChangeLog,
+  _changelog?: MonthlyChangeLog, // eslint-disable-line @typescript-eslint/no-unused-vars
 ): Recommendation[] {
   const recommendations: Recommendation[] = []
 
@@ -135,7 +135,7 @@ function getImplementationSteps(key: SignalKey, snapshot: ClientGeoSnapshot): Im
       { action: 'Distribute comparison content', detail: 'Share comparison articles on LinkedIn, submit to industry review sites, and link from relevant FAQ answers.' },
     ],
     faqCoverage: [
-      { action: 'Research common questions', detail: `Use Google\'s "People Also Ask" and AI platforms to find the top 15-20 questions about ${category}.` },
+      { action: 'Research common questions', detail: `Use Google's "People Also Ask" and AI platforms to find the top 15-20 questions about ${category}.` },
       { action: 'Write comprehensive FAQ answers', detail: `Create clear, factual answers that specifically mention ${name} and its approach to each topic.` },
       { action: 'Deploy FAQ page with schema', detail: 'Build a dedicated FAQ page and implement FAQPage schema markup for each Q&A pair.' },
       { action: 'Post to Google Business Profile Q&A', detail: 'Add your top 10 most relevant FAQs to your Google Business Profile Q&A section.' },

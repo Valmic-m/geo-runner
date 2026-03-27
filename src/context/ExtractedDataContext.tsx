@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // Re-export everything from SessionContext for backwards compatibility
 export {
   useExtractedData,
